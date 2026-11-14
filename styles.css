@@ -262,6 +262,32 @@ html, body {
   color: var(--text-primary);
 }
 
+.btn-marstrek-badge {
+  color: #fc3d21;
+  border-color: rgba(252, 61, 33, 0.4);
+  background: rgba(252, 61, 33, 0.08);
+}
+.btn-marstrek-badge:hover {
+  background: rgba(252, 61, 33, 0.22);
+  color: #ff5533;
+  border-color: #fc3d21;
+}
+
+.sv-btn-trek {
+  background: rgba(252, 61, 33, 0.18) !important;
+  border: 1px solid rgba(252, 61, 33, 0.5) !important;
+  color: #ff7556 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.sv-btn-trek:hover {
+  background: rgba(252, 61, 33, 0.35) !important;
+  color: #ffffff !important;
+}
+
 /* ==========================================================================
    DESTINATION PICKER DRAWER
    ========================================================================== */
