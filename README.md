@@ -8,10 +8,16 @@
 
 ## 🚀 Live Demo & How to Run
 
-No heavy installation or npm packages required.
+No heavy installation, npm build steps, or backend servers required.
 
-1. Simply double-click **`index.html`** or open it in any modern browser (Google Chrome, Microsoft Edge, Firefox, Brave).
-2. To read or print the complete technical handbook prepared for judges, open **`NASA_SpaceApps_MartianMap_Guide_Kasukabe.html`** and click **"🖨️ Save as PDF"**.
+1. **`Gindex.html` (Recommended Flagship Experience):** All-in-one Mars Safe Walk explorer featuring:
+   * **Mount Sharp 3D Altimetry & Traverse Explorer:** Full 40 km DEM with MOLA elevation vs. slope hazard shading, vertical relief exaggeration ($1.0\times - 3.0\times$), 3D waypoint beacons, and glowing 3D traverse route.
+   * **Photorealistic 3D Martian Street View:** Slope Hazard Heatmap (<10° Safe green, 10°–15° Caution amber, >15° NO-GO red), real-time lookahead slope alarm, and glowing navigation corridor ribbon.
+   * **2D Orbital Map Planner:** High-contrast A* safest path corridor with NASA Mars Trek WMTS streaming and NASA HRP safety checks.
+   * **NASA JPL Mars Trek 3D/VR Hub:** Direct deep-links to official NASA JPL Mars Trek portal for Gale Crater and Boxwork Ridge.
+2. **`index.html`:** The Google Maps-style ARES-TAC mission console with turn-by-turn navigation and prioritized science dossiers.
+3. Open either file in any modern web browser (Google Chrome, Microsoft Edge, Firefox, Brave, Safari).
+4. To read or print the complete technical handbook prepared for judges, open **`NASA_SpaceApps_MartianMap_Guide_Kasukabe.html`** and click **"🖨️ Save as PDF"**.
 
 ---
 

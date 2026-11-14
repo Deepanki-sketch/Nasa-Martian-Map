@@ -191,6 +191,22 @@ dd{margin:0;font-weight:600}
   .w-bottom-stack{width:calc(100vw - 24px)}
   .w-dpad{bottom:265px;left:12px}
 }
+
+/* ================= 3D MOUNT SHARP ORBIT VIEW ================= */
+#orbitView{
+  position:fixed;
+  top:49px;left:0;right:0;bottom:0;
+  width:100vw;
+  height:calc(100vh - 49px);
+  z-index:35;
+  background:#140E0B;
+  user-select:none;
+  overflow:hidden;
+}
+#orbitThree{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
+#orbitThree:active{cursor:grabbing}
+#orbitPinsOverlay{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+.steep-alarm{background:#7C1D27 !important;color:#fff !important;border:1px solid #FCA5A5 !important;animation:blink 0.75s steps(2,start) infinite !important}
 </style>
 </head>
 <script>
@@ -198,22 +214,24 @@ dd{margin:0;font-weight:600}
   var st = document.createElement('style');
   st.textContent = ""
     + "#walkView{ z-index:5000 !important; }"
+    + "#orbitView{ z-index:5000 !important; }"
     + ".leaflet-pane,.leaflet-top,.leaflet-bottom,.leaflet-control-container{ z-index:1 !important; }"
     + "#mapView.pip-mode{ position:fixed !important; left:50% !important; top:60px !important; transform:translateX(-50%) !important;"
     + " width:min(720px,90vw) !important; height:420px !important; z-index:6000 !important;"
     + " border:2px solid #241A10 !important; box-shadow:0 20px 60px rgba(0,0,0,.5) !important; display:block !important; visibility:visible !important; }";
   document.head.appendChild(st);
 
-  function isWalk(){
+  function is3DActive(){
     var w = document.getElementById('walkView');
-    return w && !w.hidden;
+    var o = document.getElementById('orbitView');
+    return (w && !w.hidden) || (o && !o.hidden);
   }
   function fixBigMap(){
     var mv = document.getElementById('mapView');
     if(!mv) return;
-    if(isWalk() && !mv.classList.contains('pip-mode')){
+    if(is3DActive() && !mv.classList.contains('pip-mode')){
       mv.style.display = 'none';
-    } else if(!isWalk()){
+    } else if(!is3DActive()){
       mv.classList.remove('pip-mode');
       mv.style.display = '';
       var b = document.getElementById('btnMapPip');
@@ -222,17 +240,24 @@ dd{margin:0;font-weight:600}
     }
   }
 
-  // auto-fix whenever walkView shows / hides
+  // auto-fix whenever walkView or orbitView shows / hides
   var walkEl = document.getElementById('walkView');
   if(walkEl && window.MutationObserver){
     new MutationObserver(function(){ setTimeout(fixBigMap, 30); })
       .observe(walkEl, { attributes:true, attributeFilter:['hidden'] });
+  }
+  var orbitEl = document.getElementById('orbitView');
+  if(orbitEl && window.MutationObserver){
+    new MutationObserver(function(){ setTimeout(fixBigMap, 30); })
+      .observe(orbitEl, { attributes:true, attributeFilter:['hidden'] });
   }
   document.querySelectorAll('[data-mode]').forEach(function(b){
     b.addEventListener('click', function(){ setTimeout(fixBigMap, 100); });
   });
   var back = document.getElementById('backMap');
   if(back) back.addEventListener('click', function(){ setTimeout(fixBigMap, 100); });
+  var backOrb = document.getElementById('backFromOrbit');
+  if(backOrb) backOrb.addEventListener('click', function(){ setTimeout(fixBigMap, 100); });
 
   // add 2D Map ON/OFF toggle to Walk HUD
   var pills = document.querySelector('.w-top-pills');
@@ -305,7 +330,9 @@ dd{margin:0;font-weight:600}
     <nav class="modes">
       <button class="btn" data-mode="map">Map Planner</button>
       <button class="btn primary on" data-mode="walk">Walk in 3D (Street View)</button>
+      <button class="btn" data-mode="orbit">Mount Sharp 3D</button>
       <button class="btn" id="howBtn">How this works</button>
+      <button class="btn" id="btnMarsTrekTop" title="Launch official NASA JPL Mars Trek Portal for Gale Crater" style="background:#2C5870;color:#fff;border-color:#2C5870">NASA Mars Trek ↗</button>
     </nav>
     <div class="pills">
       <span class="pill" id="pillAir">Suit O2 left: 92%</span>
@@ -429,6 +456,7 @@ dd{margin:0;font-weight:600}
 
   <!-- Top Right Mode & Telemetry Pills -->
   <div class="w-top-pills">
+    <button class="w-pill active" id="btnSlopeHeat" title="Toggle ground slope hazard coloring (Green <10°, Amber 10-15°, Red >15°)">Slope Heatmap: ON</button>
     <button class="w-pill active" id="btnAutoWalk" title="Toggle continuous walking along the route">Walk Mode: ON</button>
     <button class="w-pill" id="btnAudio" title="Synthesized Martian wind and footsteps">7D Audio: OFF</button>
     <button class="w-pill" id="btnAvatar" title="Switch between 1st-person Street View and 3D Astronaut Avatar">Mode: 3D Avatar</button>
@@ -545,6 +573,79 @@ dd{margin:0;font-weight:600}
   </div>
 </div>
 
+<!-- ================= FULLSCREEN 3D MOUNT SHARP ORBIT VIEW ================= -->
+<div id="orbitView" hidden>
+  <div id="orbitThree"></div>
+  <div id="orbitPinsOverlay"></div>
+
+  <!-- Top Back Button -->
+  <button class="w-top-back" id="backFromOrbit" title="Switch to 2D Map Planner">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  </button>
+
+  <!-- Top Center Title Pill -->
+  <div class="w-top-title">
+    <strong>Mount Sharp (Aeolis Mons) · 3D Altimetry &amp; Traverse Explorer</strong>
+    <span>Gale Crater · 40 km × 40 km Digital Elevation Model (MOLA Altimetry)</span>
+  </div>
+
+  <!-- Top Right Mode & Control Pills -->
+  <div class="w-top-pills">
+    <button class="w-pill active" id="btnOrbitShading" title="Toggle between MOLA Elevation colors and Slope Hazard heatmap">Shading: MOLA Height</button>
+    <button class="w-pill" id="btnOrbitMarsTrek" title="Launch official NASA JPL Mars Trek 3D/VR Portal for Gale Crater">JPL Mars Trek 3D ↗</button>
+    <button class="w-pill" id="btnOrbitReset" title="Reset 3D camera to default overview">Reset View</button>
+  </div>
+
+  <!-- Right Floating Control Panel -->
+  <div class="w-right-stack" style="width:235px">
+    <div class="w-card">
+      <div class="w-card-head">
+        <span>TERRAIN RELIEF</span>
+        <span id="lblExaggeration">1.6×</span>
+      </div>
+      <div class="w-slider-row" style="grid-template-columns:75px 1fr 38px;margin:4px 0 8px">
+        <span>Relief:</span>
+        <input type="range" id="sliderExaggeration" min="1.0" max="3.0" step="0.1" value="1.6">
+        <b id="valExaggeration">1.6×</b>
+      </div>
+      <div class="w-card-head" style="margin-top:10px">
+        <span>CAMERA PRESETS</span>
+      </div>
+      <div class="row" style="margin-top:4px">
+        <button class="btn sm" id="btnCamGale" style="flex:1">Overview</button>
+        <button class="btn sm" id="btnCamBoxwork" style="flex:1">Boxwork</button>
+        <button class="btn sm" id="btnCamTop" style="flex:1">Aerial</button>
+      </div>
+    </div>
+
+    <div class="w-card">
+      <div class="w-card-head">
+        <span>SLOPE HAZARDS (NASA HRP)</span>
+      </div>
+      <div style="font-size:11.5px;line-height:1.55;margin-top:4px">
+        <div style="display:flex;align-items:center;gap:6px;margin:3px 0">
+          <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#22C55E"></span>
+          <span>&lt; 10° Safe Slope (3.0 km/h)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin:3px 0">
+          <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#F59E0B"></span>
+          <span>10°–15° Caution (1.2 km/h)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin:3px 0">
+          <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#EF4444"></span>
+          <span>&gt; 15° NO-GO Hazard Limit</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Landmark Switcher & Hint -->
+  <div class="w-bottom-stack">
+    <div class="w-chips" id="orbitChips"></div>
+    <div class="w-foot-hint">Drag to Orbit 360° · Right-Click or Shift-Drag to Pan · Scroll to Zoom · Click any landmark pin to inspect</div>
+  </div>
+</div>
+
 <div id="notice" class="notice" hidden></div>
 
 <!-- Load Leaflet & Three.js synchronously with dual-CDN fallback -->
@@ -609,6 +710,13 @@ function slopeAt(x, y) {
   const gx = (elev(x + s, y) - elev(x - s, y)) / (2 * s);
   const gy = (elev(x, y + s) - elev(x, y - s)) / (2 * s);
   return Math.atan(Math.hypot(gx, gy)) * R2D;
+}
+function directionalSlopeAt(x, y, heading) {
+  const sH = Math.sin(heading), cH = Math.cos(heading);
+  const step = 8;
+  const hCurr = elev(x, y);
+  const hAhead = elev(x + sH * step, y + cH * step);
+  return Math.atan2(hAhead - hCurr, step) * R2D;
 }
 function terrainOf(x, y, h) {
   if (ridgeAt(x, y) > 1.15 && h > 150) return { name: 'Rocky knife-edge ridges', eta: 1.0 };
@@ -698,6 +806,7 @@ const S = {
   autoWalk: false,
   audioOn: false,
   avatarMode: false,
+  slopeHeatmap: true, // Realistic slope hazard overlay in 3D Street View (<10° Safe, 10°-15° Caution, >15° Hazard)
   panoSky: false
 };
 
@@ -870,6 +979,7 @@ function rebuildRoute() {
     drawMini();
     drawWalkElev();
     buildRouteVisual();
+    if (typeof buildOrbitRoute === 'function') buildOrbitRoute();
   });
 }
 
@@ -1256,7 +1366,13 @@ function drawRouteMap() {
   routeLayer.clearLayers(); stopLayer.clearLayers();
   if (ROUTE.pts.length > 1) {
     const ll = ROUTE.pts.map(p => { const q = xy2ll(p.x, p.y); return [q.lat, q.lon]; });
-    L.polyline(ll, { color: '#B0461C', weight: 4, opacity: 0.92 }).addTo(routeLayer);
+    // 1. Glowing outer safety corridor halo
+    L.polyline(ll, { color: '#00F0FF', weight: 10, opacity: 0.38, lineCap: 'round', lineJoin: 'round' }).addTo(routeLayer);
+    // 2. High-contrast neon cyan/emerald safe path
+    const routeColor = ROUTE.noGo ? '#EF4444' : ROUTE.caution > 0 ? '#F59E0B' : '#00E5FF';
+    L.polyline(ll, { color: routeColor, weight: 4.5, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }).addTo(routeLayer);
+    // 3. Inner bright white dashed guidance centerline
+    L.polyline(ll, { color: '#FFFFFF', weight: 1.8, opacity: 0.92, dashArray: '6 8' }).addTo(routeLayer);
   }
   ROUTE.stops.forEach((s, i) => {
     L.marker([s.lat, s.lon], {
@@ -1608,6 +1724,22 @@ function initThreeScene() {
 }
 
 function groundVertexColor(x, y, h) {
+  const s = slopeAt(x, y);
+  if (S.slopeHeatmap) {
+    // NASA HRP Slope Hazard Heatmap:
+    // Green (<10°) = SAFE nominal EVA walk (up to 3.0 km/h)
+    // Amber (10°-15°) = CAUTION steep terrain, walk at 1.2 km/h
+    // Red (>15°) = NO-GO HAZARD, spacesuit tipping / slip risk
+    if (s > 15) {
+      return [0.92, 0.15, 0.15];
+    } else if (s > 10) {
+      return [0.95, 0.65, 0.10];
+    } else {
+      const t = clamp(s / 10, 0, 1);
+      return [0.22 + 0.25 * t, 0.72 - 0.10 * t, 0.35 - 0.12 * t];
+    }
+  }
+
   const t = clamp(h / 2200, 0, 1);
   let r = 0.96 - 0.18 * t, g = 0.84 - 0.22 * t, b = 0.72 - 0.22 * t;
   if (ridgeAt(x, y) > 1.2 && h > 140) {
@@ -1690,19 +1822,76 @@ function buildRouteVisual() {
   }
   const pts = ROUTE.pts;
   if (pts.length > 1) {
+    // 1. Glowing neon navigation ribbon on the surface
     const pos = [];
+    const colors = [];
+    const ribbonHalfWidth = 1.15; // 2.3 meters wide corridor
     for (let i = 1; i < pts.length; i++) {
       const p = pts[i - 1], q = pts[i];
       const ax = p.x, az = -p.y, bx = q.x, bz = -q.y;
-      const ay = microElev(p.x, p.y) + 0.35, by = microElev(q.x, q.y) + 0.35;
+      const ay = microElev(p.x, p.y) + 0.38, by = microElev(q.x, q.y) + 0.38;
       const dx = bx - ax, dz = bz - az, L = Math.hypot(dx, dz) || 1;
-      const nx = -dz / L * 1.1, nz = dx / L * 1.1;
+      const nx = -dz / L * ribbonHalfWidth, nz = dx / L * ribbonHalfWidth;
+
+      const segSlope = Math.max(p.s, q.s);
+      let cr = 0.0, cg = 0.95, cb = 1.0;
+      if (segSlope > 15) { cr = 0.95; cg = 0.15; cb = 0.15; }
+      else if (segSlope > 10) { cr = 0.95; cg = 0.65; cb = 0.10; }
+
+      // 2 triangles per segment
       pos.push(ax + nx, ay, az + nz, ax - nx, ay, az - nz, bx + nx, by, bz + nz);
       pos.push(ax - nx, ay, az - nz, bx - nx, by, bz - nz, bx + nx, by, bz + nz);
+
+      for (let k = 0; k < 6; k++) {
+        colors.push(cr, cg, cb);
+      }
     }
     const g = new mod.BufferGeometry();
     g.setAttribute('position', new mod.Float32BufferAttribute(pos, 3));
-    T.routeGroup.add(new mod.Mesh(g, new mod.MeshBasicMaterial({ color: 0xFFE4C4, transparent: true, opacity: 0.42, side: mod.DoubleSide })));
+    g.setAttribute('color', new mod.Float32BufferAttribute(colors, 3));
+    const ribbonMat = new mod.MeshBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.68,
+      side: mod.DoubleSide,
+      depthWrite: false
+    });
+    T.routeGroup.add(new mod.Mesh(g, ribbonMat));
+
+    // 2. High-contrast edge rails
+    const railL = [], railR = [];
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
+      const py = microElev(p.x, p.y) + 0.42;
+      const nextP = pts[Math.min(pts.length - 1, i + 1)];
+      const prevP = pts[Math.max(0, i - 1)];
+      const dx = nextP.x - prevP.x, dz = -(nextP.y - prevP.y), L = Math.hypot(dx, dz) || 1;
+      const nx = -dz / L * ribbonHalfWidth, nz = dx / L * ribbonHalfWidth;
+      railL.push(new mod.Vector3(p.x + nx, py, -p.y + nz));
+      railR.push(new mod.Vector3(p.x - nx, py, -p.y - nz));
+    }
+    const railMat = new mod.LineBasicMaterial({ color: 0x00FFFF, transparent: true, opacity: 0.95, linewidth: 2 });
+    const gL = new mod.BufferGeometry().setFromPoints(railL);
+    const gR = new mod.BufferGeometry().setFromPoints(railR);
+    T.routeGroup.add(new mod.Line(gL, railMat));
+    T.routeGroup.add(new mod.Line(gR, railMat));
+
+    // 3. 3D Waypoint Beacons along the route
+    ROUTE.stops.forEach(s => {
+      const sy = microElev(s.x, s.y);
+      const cylGeo = new mod.CylinderGeometry(0.3, 0.3, 18, 16);
+      const cylMat = new mod.MeshBasicMaterial({ color: 0x00F0FF, transparent: true, opacity: 0.45 });
+      const cyl = new mod.Mesh(cylGeo, cylMat);
+      cyl.position.set(s.x, sy + 9, -s.y);
+      T.routeGroup.add(cyl);
+
+      const rGeo = new mod.RingGeometry(1.2, 1.8, 24);
+      rGeo.rotateX(-Math.PI / 2);
+      const rMat = new mod.MeshBasicMaterial({ color: 0x10B981, side: mod.DoubleSide, transparent: true, opacity: 0.85 });
+      const rMesh = new mod.Mesh(rGeo, rMat);
+      rMesh.position.set(s.x, sy + 0.2, -s.y);
+      T.routeGroup.add(rMesh);
+    });
   }
 }
 
@@ -2003,9 +2192,13 @@ function updateHud() {
   $('hDist').textContent = (db / 1000).toFixed(1) + ' km';
   $('hDistSub').textContent = '~' + fmtH(walkHrs) + ' walk';
 
-  const dirWord = s < 0.8 ? 'Flat' : 'Uphill';
-  $('hSlope').textContent = s.toFixed(1) + '\u00B0 ' + dirWord;
-  $('hTerr').textContent = t.name;
+  // Directional Slope & Slope Hazard Coloring
+  const dirSlope = directionalSlopeAt(WK.x, WK.y, WK.heading);
+  const dirWord = Math.abs(dirSlope) < 0.8 ? 'Flat' : dirSlope > 0 ? 'Uphill' : 'Downhill';
+  const slopeColor = s > 15 ? '#EF4444' : s > 10 ? '#F59E0B' : '#22C55E';
+  const slopeStatus = s > 15 ? '⛔ EXCEEDS 15°' : s > 10 ? '⚠️ CAUTION' : '✔ SAFE (<10°)';
+  $('hSlope').innerHTML = `<span style="color:${slopeColor}">${s.toFixed(1)}° (${dirSlope >= 0 ? '+' : ''}${dirSlope.toFixed(1)}° ${dirWord})</span>`;
+  $('hTerr').innerHTML = `${t.name} · <b style="color:${slopeColor}">${slopeStatus}</b>`;
 
   $('hHead').textContent = compass(WK.heading);
 
@@ -2016,7 +2209,26 @@ function updateHud() {
   const skyDesc = S.tau < 0.8 ? 'Clear sky \u00B7 Light red haze' : S.tau < 1.6 ? 'Moderate dust haze' : 'Heavy dust storm';
   $('hBack').textContent = reserveOk ? skyDesc : 'LOW MARGIN \u00B7 Return to base';
   $('compassDot').className = 'dot' + (reserveOk ? ' ok' : '');
-  $('alarm').hidden = reserveOk;
+
+  // Lookahead slope hazard detection (14m ahead)
+  const lookaheadDist = 14;
+  const sH = Math.sin(WK.heading), cH = Math.cos(WK.heading);
+  const aheadX = WK.x + sH * lookaheadDist, aheadY = WK.y + cH * lookaheadDist;
+  const aheadSlope = slopeAt(aheadX, aheadY);
+
+  const alarmEl = $('alarm');
+  if (aheadSlope > 15) {
+    alarmEl.hidden = false;
+    alarmEl.className = 'alarm steep-alarm';
+    alarmEl.textContent = `⚠️ STEEP SLOPE AHEAD: +${aheadSlope.toFixed(1)}° (EXCEEDS 15° NASA SUIT LIMIT) · TURN TO DIVERT`;
+  } else if (!reserveOk) {
+    alarmEl.hidden = false;
+    alarmEl.className = 'alarm';
+    alarmEl.textContent = 'ABORT EVA · Return to Base Camp now. Remaining O2 has reached Walkback + 45-minute reserve.';
+  } else {
+    alarmEl.hidden = true;
+  }
+
   $('walkHint').textContent = performance.now() < WK.hintUntil ? WK.hint : '';
 }
 
@@ -2075,14 +2287,449 @@ function enterWalk() {
   }
 }
 
+/* ================= MOUNT SHARP 3D ELEVATION & ORBIT EXPLORER ================= */
+const ORBIT = {
+  ready: false,
+  running: false,
+  scene: null,
+  camera: null,
+  renderer: null,
+  terrainMesh: null,
+  routeMesh: null,
+  markersGroup: null,
+  shadingMode: 'mola', // 'mola' or 'slope'
+  exaggeration: 1.6,
+  radius: 36000,
+  theta: 0.65,
+  phi: 0.95,
+  target: null,
+  downPt: null,
+  dragged: false,
+  isRightDrag: false,
+  lastW: 0,
+  lastH: 0
+};
+
+function orbitVertexColor(x, y, h, s, mode) {
+  if (mode === 'slope') {
+    if (s > 15) return [0.92, 0.15, 0.15];
+    if (s > 10) return [0.95, 0.65, 0.10];
+    return [0.15, 0.72, 0.35];
+  }
+  // MOLA Elevation Altimetry color ramp
+  if (h <= 200) return mix3([0.15, 0.40, 0.85], [0.15, 0.75, 0.85], clamp(h / 200, 0, 1));
+  if (h <= 800) return mix3([0.15, 0.75, 0.85], [0.25, 0.80, 0.35], clamp((h - 200) / 600, 0, 1));
+  if (h <= 1600) return mix3([0.25, 0.80, 0.35], [0.85, 0.85, 0.20], clamp((h - 800) / 800, 0, 1));
+  if (h <= 2400) return mix3([0.85, 0.85, 0.20], [0.92, 0.50, 0.15], clamp((h - 1600) / 800, 0, 1));
+  if (h <= 3200) return mix3([0.92, 0.50, 0.15], [0.80, 0.20, 0.35], clamp((h - 2400) / 800, 0, 1));
+  return mix3([0.80, 0.20, 0.35], [0.98, 0.95, 0.95], clamp((h - 3200) / 1000, 0, 1));
+}
+
+function initOrbitScene() {
+  if (ORBIT.scene) return;
+  const mod = window.THREE;
+  if (!mod) return;
+
+  const host = $('orbitThree');
+  const w = host.clientWidth || window.innerWidth;
+  const h = host.clientHeight || (window.innerHeight - 49);
+  ORBIT.lastW = w; ORBIT.lastH = h;
+  ORBIT.target = new mod.Vector3(0, 600, 0);
+
+  const renderer = new mod.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  renderer.setSize(w, h, false);
+  renderer.domElement.style.width = '100%';
+  renderer.domElement.style.height = '100%';
+  renderer.domElement.style.display = 'block';
+  host.innerHTML = '';
+  host.appendChild(renderer.domElement);
+
+  const scene = new mod.Scene();
+  scene.background = new mod.Color(0x120d09);
+  scene.fog = new mod.FogExp2(0x1a120c, 0.000015);
+
+  const camera = new mod.PerspectiveCamera(45, w / Math.max(1, h), 10, 180000);
+
+  const hemi = new mod.HemisphereLight(0xffeedd, 0x3d2010, 0.85);
+  const dirLight = new mod.DirectionalLight(0xfff5e6, 1.4);
+  dirLight.position.set(25000, 35000, 20000);
+  scene.add(hemi, dirLight);
+
+  // Stars background
+  const starGeo = new mod.BufferGeometry();
+  const starPos = [];
+  for (let i = 0; i < 900; i++) {
+    const v = new mod.Vector3(
+      (Math.random() - 0.5) * 160000,
+      Math.random() * 80000 + 5000,
+      (Math.random() - 0.5) * 160000
+    );
+    starPos.push(v.x, v.y, v.z);
+  }
+  starGeo.setAttribute('position', new mod.Float32BufferAttribute(starPos, 3));
+  const starMat = new mod.PointsMaterial({ color: 0xffeedd, size: 2.5, transparent: true, opacity: 0.75 });
+  scene.add(new mod.Points(starGeo, starMat));
+
+  const markersGroup = new mod.Group();
+  scene.add(markersGroup);
+
+  ORBIT.scene = scene;
+  ORBIT.camera = camera;
+  ORBIT.renderer = renderer;
+  ORBIT.markersGroup = markersGroup;
+
+  buildOrbitTerrain();
+  buildOrbitRoute();
+  renderOrbitChips();
+  updateOrbitCamera();
+
+  // Pointer controls
+  host.addEventListener('pointerdown', e => {
+    ORBIT.downPt = { x: e.clientX, y: e.clientY };
+    ORBIT.dragged = false;
+    ORBIT.isRightDrag = (e.button === 2 || e.shiftKey);
+    host.setPointerCapture(e.pointerId);
+  });
+  host.addEventListener('pointermove', e => {
+    if (!ORBIT.downPt) return;
+    const dx = e.clientX - ORBIT.downPt.x, dy = e.clientY - ORBIT.downPt.y;
+    if (Math.hypot(dx, dy) > 3) ORBIT.dragged = true;
+    ORBIT.downPt = { x: e.clientX, y: e.clientY };
+
+    if (ORBIT.isRightDrag) {
+      // Pan target
+      const panSpeed = ORBIT.radius * 0.0012;
+      const sT = Math.sin(ORBIT.theta), cT = Math.cos(ORBIT.theta);
+      ORBIT.target.x -= (cT * dx - sT * dy) * panSpeed;
+      ORBIT.target.z -= (-sT * dx - cT * dy) * panSpeed;
+    } else {
+      // Orbit
+      ORBIT.theta -= dx * 0.0055;
+      ORBIT.phi = clamp(ORBIT.phi - dy * 0.0045, 0.08, Math.PI / 2 - 0.03);
+    }
+    updateOrbitCamera();
+  });
+  const endDrag = () => { ORBIT.downPt = null; };
+  host.addEventListener('pointerup', endDrag);
+  host.addEventListener('pointercancel', endDrag);
+  host.addEventListener('contextmenu', e => e.preventDefault());
+
+  host.addEventListener('wheel', e => {
+    e.preventDefault();
+    ORBIT.radius = clamp(ORBIT.radius + e.deltaY * 26, 4500, 110000);
+    updateOrbitCamera();
+  }, { passive: false });
+}
+
+function updateOrbitCamera() {
+  if (!ORBIT.camera || !ORBIT.target) return;
+  const sinP = Math.sin(ORBIT.phi), cosP = Math.cos(ORBIT.phi);
+  const sinT = Math.sin(ORBIT.theta), cosT = Math.cos(ORBIT.theta);
+  ORBIT.camera.position.set(
+    ORBIT.target.x + ORBIT.radius * sinP * sinT,
+    ORBIT.target.y + ORBIT.radius * cosP,
+    ORBIT.target.z + ORBIT.radius * sinP * cosT
+  );
+  ORBIT.camera.lookAt(ORBIT.target);
+}
+
+function buildOrbitTerrain() {
+  if (!ORBIT.scene) return;
+  const mod = window.THREE;
+  const N = NG;
+  const pos = new Float32Array(N * N * 3);
+  const col = new Float32Array(N * N * 3);
+  const idx = [];
+
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const x = -HALF + i * STEP;
+      const y = -HALF + j * STEP;
+      const k = j * N + i;
+      const h = gH[k];
+      const s = gS[k];
+      const c = orbitVertexColor(x, y, h, s, ORBIT.shadingMode);
+
+      const k3 = k * 3;
+      pos[k3] = x;
+      pos[k3 + 1] = h * ORBIT.exaggeration;
+      pos[k3 + 2] = -y;
+
+      col[k3] = c[0];
+      col[k3 + 1] = c[1];
+      col[k3 + 2] = c[2];
+    }
+  }
+
+  for (let j = 0; j < N - 1; j++) {
+    for (let i = 0; i < N - 1; i++) {
+      const a = j * N + i, b = a + 1, c = a + N, d = c + 1;
+      idx.push(a, b, c, b, d, c);
+    }
+  }
+
+  const geo = new mod.BufferGeometry();
+  geo.setAttribute('position', new mod.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new mod.BufferAttribute(col, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+
+  if (ORBIT.terrainMesh) {
+    ORBIT.terrainMesh.geometry.dispose();
+    ORBIT.terrainMesh.geometry = geo;
+  } else {
+    const mat = new mod.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.82,
+      metalness: 0.08,
+      flatShading: false
+    });
+    ORBIT.terrainMesh = new mod.Mesh(geo, mat);
+    ORBIT.scene.add(ORBIT.terrainMesh);
+  }
+
+  rebuildOrbitMarkers();
+}
+
+function updateOrbitExaggeration(val) {
+  ORBIT.exaggeration = val;
+  $('lblExaggeration').textContent = val.toFixed(1) + '\u00D7';
+  $('valExaggeration').textContent = val.toFixed(1) + '\u00D7';
+  $('sliderExaggeration').value = val;
+
+  if (ORBIT.terrainMesh) {
+    const pos = ORBIT.terrainMesh.geometry.attributes.position.array;
+    const N = NG;
+    for (let k = 0; k < N * N; k++) {
+      pos[k * 3 + 1] = gH[k] * val;
+    }
+    ORBIT.terrainMesh.geometry.attributes.position.needsUpdate = true;
+    ORBIT.terrainMesh.geometry.computeVertexNormals();
+  }
+
+  rebuildOrbitMarkers();
+  buildOrbitRoute();
+}
+
+function setOrbitShading(mode) {
+  ORBIT.shadingMode = mode;
+  $('btnOrbitShading').textContent = mode === 'mola' ? 'Shading: MOLA Height' : 'Shading: Slope Hazards';
+  $('btnOrbitShading').classList.toggle('active', mode === 'mola');
+
+  if (ORBIT.terrainMesh) {
+    const col = ORBIT.terrainMesh.geometry.attributes.color.array;
+    const N = NG;
+    for (let j = 0; j < N; j++) {
+      for (let i = 0; i < N; i++) {
+        const x = -HALF + i * STEP;
+        const y = -HALF + j * STEP;
+        const k = j * N + i;
+        const c = orbitVertexColor(x, y, gH[k], gS[k], mode);
+        col[k * 3] = c[0];
+        col[k * 3 + 1] = c[1];
+        col[k * 3 + 2] = c[2];
+      }
+    }
+    ORBIT.terrainMesh.geometry.attributes.color.needsUpdate = true;
+  }
+}
+
+function rebuildOrbitMarkers() {
+  if (!ORBIT.markersGroup) return;
+  const mod = window.THREE;
+  while (ORBIT.markersGroup.children.length) {
+    const ch = ORBIT.markersGroup.children[0];
+    if (ch.geometry) ch.geometry.dispose();
+    ORBIT.markersGroup.remove(ch);
+  }
+
+  PLACES.forEach((p, i) => {
+    const py = elev(p.x, p.y) * ORBIT.exaggeration;
+    // Light beam column
+    const colGeo = new mod.CylinderGeometry(20, 20, 1100, 16);
+    const colMat = new mod.MeshBasicMaterial({
+      color: i === 0 ? 0x3B82F6 : i === 3 ? 0x10B981 : 0xE07020,
+      transparent: true,
+      opacity: 0.65
+    });
+    const col = new mod.Mesh(colGeo, colMat);
+    col.position.set(p.x, py + 550, -p.y);
+    ORBIT.markersGroup.add(col);
+
+    // Glowing Sphere
+    const sphGeo = new mod.SphereGeometry(140, 16, 16);
+    const sphMat = new mod.MeshStandardMaterial({
+      color: i === 0 ? 0x60A5FA : i === 3 ? 0x34D399 : 0xFBBF24,
+      emissive: i === 0 ? 0x1E40AF : i === 3 ? 0x065F46 : 0xB45309,
+      roughness: 0.3
+    });
+    const sph = new mod.Mesh(sphGeo, sphMat);
+    sph.position.set(p.x, py + 1100, -p.y);
+    ORBIT.markersGroup.add(sph);
+  });
+}
+
+function buildOrbitRoute() {
+  if (!ORBIT.scene) return;
+  const mod = window.THREE;
+  if (ORBIT.routeMesh) {
+    ORBIT.scene.remove(ORBIT.routeMesh);
+    if (ORBIT.routeMesh.geometry) ORBIT.routeMesh.geometry.dispose();
+    ORBIT.routeMesh = null;
+  }
+  const pts = ROUTE.pts;
+  if (pts.length < 2) return;
+
+  const points3D = pts.map(p => new mod.Vector3(p.x, elev(p.x, p.y) * ORBIT.exaggeration + 55, -p.y));
+  const curve = new mod.CatmullRomCurve3(points3D);
+  const tubeGeo = new mod.TubeGeometry(curve, Math.min(pts.length * 4, 300), 45, 8, false);
+  const tubeMat = new mod.MeshBasicMaterial({ color: 0x00F0FF });
+  ORBIT.routeMesh = new mod.Mesh(tubeGeo, tubeMat);
+  ORBIT.scene.add(ORBIT.routeMesh);
+}
+
+function orbitCameraPreset(type) {
+  if (type === 'gale') {
+    ORBIT.target.set(0, 600, 0);
+    ORBIT.theta = 0.65;
+    ORBIT.phi = 0.95;
+    ORBIT.radius = 36000;
+  } else if (type === 'boxwork') {
+    const bw = PLACES[3];
+    ORBIT.target.set(bw.x, elev(bw.x, bw.y) * ORBIT.exaggeration, -bw.y);
+    ORBIT.theta = 0.85;
+    ORBIT.phi = 1.15;
+    ORBIT.radius = 11000;
+  } else if (type === 'top') {
+    ORBIT.target.set(0, 400, 0);
+    ORBIT.theta = 0;
+    ORBIT.phi = 0.08;
+    ORBIT.radius = 48000;
+  }
+  updateOrbitCamera();
+}
+
+function updateOrbitPins() {
+  if (!ORBIT.camera || !ORBIT.scene) return;
+  const mod = window.THREE;
+  const host = $('orbitPinsOverlay');
+  if (!host.children.length) {
+    PLACES.forEach((p, i) => {
+      const el = document.createElement('div');
+      el.className = 'pin3d';
+      el.innerHTML =
+        '<div class="pin-card">' +
+          '<strong>' + p.name + '</strong>' +
+          '<span>' + Math.round(BASE_DATUM + elev(p.x, p.y)) + 'm · ' + p.short + '</span>' +
+        '</div>' +
+        '<svg class="pin-drop" viewBox="0 0 24 30">' +
+          '<path d="M12 1C6.5 1 2 5.5 2 11c0 7.5 10 17.5 10 17.5S22 18.5 22 11c0-5.5-4.5-10-10-10z" fill="' + (i === 0 ? '#3B82F6' : i === 3 ? '#10B981' : '#E07020') + '" stroke="#FFFFFF" stroke-width="2"/>' +
+          '<circle cx="12" cy="11" r="3.5" fill="#FFFFFF"/>' +
+        '</svg>';
+      el.onclick = e => {
+        e.stopPropagation();
+        ORBIT.target.set(p.x, elev(p.x, p.y) * ORBIT.exaggeration, -p.y);
+        ORBIT.radius = Math.min(ORBIT.radius, 14000);
+        updateOrbitCamera();
+        notice('Targeted ' + p.name + ' · Click "Walk in 3D" to land on surface.');
+      };
+      host.appendChild(el);
+    });
+  }
+
+  const W = ORBIT.lastW || window.innerWidth;
+  const H = ORBIT.lastH || (window.innerHeight - 49);
+  const camDir = new mod.Vector3();
+  ORBIT.camera.getWorldDirection(camDir);
+
+  Array.from(host.children).forEach((el, i) => {
+    const p = PLACES[i];
+    const py = elev(p.x, p.y) * ORBIT.exaggeration + 1150;
+    const v = new mod.Vector3(p.x, py, -p.y);
+    const toPin = v.clone().sub(ORBIT.camera.position).normalize();
+    if (camDir.dot(toPin) <= 0.1) {
+      el.style.display = 'none';
+      return;
+    }
+    v.project(ORBIT.camera);
+    const sx = (v.x * 0.5 + 0.5) * W;
+    const sy = (-v.y * 0.5 + 0.5) * H;
+    if (sx < 40 || sx > W - 40 || sy < 50 || sy > H - 80) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'flex';
+    el.style.left = sx + 'px';
+    el.style.top = sy + 'px';
+  });
+}
+
+function renderOrbitChips() {
+  const host = $('orbitChips');
+  if (!host) return;
+  host.innerHTML = '';
+  PLACES.forEach((p, i) => {
+    const b = document.createElement('button');
+    b.className = 'w-chip' + (S.sel === i ? ' on' : '');
+    b.textContent = p.name;
+    b.onclick = () => {
+      S.sel = i;
+      document.querySelectorAll('#orbitChips .w-chip').forEach((c, ci) => c.classList.toggle('on', ci === i));
+      ORBIT.target.set(p.x, elev(p.x, p.y) * ORBIT.exaggeration, -p.y);
+      ORBIT.radius = 12000;
+      updateOrbitCamera();
+    };
+    host.appendChild(b);
+  });
+}
+
+function orbitLoop() {
+  if (!ORBIT.running || !ORBIT.scene) return;
+  const host = $('orbitThree');
+  const w = host.clientWidth || window.innerWidth;
+  const hh = host.clientHeight || (window.innerHeight - 49);
+  if (ORBIT.lastW !== w || ORBIT.lastH !== hh) {
+    ORBIT.lastW = w; ORBIT.lastH = hh;
+    ORBIT.renderer.setSize(w, hh, false);
+    ORBIT.camera.aspect = w / Math.max(1, hh);
+    ORBIT.camera.updateProjectionMatrix();
+  }
+  updateOrbitPins();
+  ORBIT.renderer.render(ORBIT.scene, ORBIT.camera);
+  requestAnimationFrame(orbitLoop);
+}
+
+function enterOrbit() {
+  try {
+    initOrbitScene();
+  } catch (e) {
+    console.error(e);
+    notice('3D Orbit engine could not start.');
+    return;
+  }
+  buildOrbitRoute();
+  renderOrbitChips();
+  if (!ORBIT.running) {
+    ORBIT.running = true;
+    requestAnimationFrame(orbitLoop);
+  }
+}
+
 function setMode(m) {
   S.mode = m;
   $('walkView').hidden = m !== 'walk';
+  if ($('orbitView')) $('orbitView').hidden = m !== 'orbit';
   document.querySelectorAll('.modes [data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
   if (m === 'walk') {
+    ORBIT.running = false;
     enterWalk();
+  } else if (m === 'orbit') {
+    walkRunning = false;
+    enterOrbit();
   } else {
     walkRunning = false;
+    ORBIT.running = false;
     if (map) setTimeout(() => map.invalidateSize(), 50);
     drawProfile();
   }
@@ -2310,6 +2957,53 @@ function bindEvents() {
     $('sheetToggle').textContent = sh.classList.contains('collapsed') ? 'Show panel' : 'Hide panel';
     drawProfile();
   };
+
+  // Slope Hazard Heatmap toggle in Street View
+  const btnSlopeHeat = $('btnSlopeHeat');
+  if (btnSlopeHeat) {
+    btnSlopeHeat.onclick = () => {
+      S.slopeHeatmap = !S.slopeHeatmap;
+      btnSlopeHeat.textContent = 'Slope Heatmap: ' + (S.slopeHeatmap ? 'ON' : 'OFF');
+      btnSlopeHeat.classList.toggle('active', S.slopeHeatmap);
+      rebuildPatch();
+      notice('Slope Hazard Heatmap ' + (S.slopeHeatmap ? 'ENABLED (<10° Safe, 10°-15° Caution, >15° Hazard)' : 'DISABLED'));
+    };
+  }
+
+  // Mount Sharp 3D Orbit Controls
+  const backFromOrbit = $('backFromOrbit');
+  if (backFromOrbit) backFromOrbit.onclick = () => setMode('map');
+
+  const btnOrbitShading = $('btnOrbitShading');
+  if (btnOrbitShading) {
+    btnOrbitShading.onclick = () => {
+      setOrbitShading(ORBIT.shadingMode === 'mola' ? 'slope' : 'mola');
+    };
+  }
+
+  const sliderEx = $('sliderExaggeration');
+  if (sliderEx) {
+    sliderEx.addEventListener('input', e => updateOrbitExaggeration(+e.target.value));
+  }
+
+  const btnCamGale = $('btnCamGale');
+  if (btnCamGale) btnCamGale.onclick = () => orbitCameraPreset('gale');
+  const btnCamBoxwork = $('btnCamBoxwork');
+  if (btnCamBoxwork) btnCamBoxwork.onclick = () => orbitCameraPreset('boxwork');
+  const btnCamTop = $('btnCamTop');
+  if (btnCamTop) btnCamTop.onclick = () => orbitCameraPreset('top');
+  const btnOrbitReset = $('btnOrbitReset');
+  if (btnOrbitReset) btnOrbitReset.onclick = () => orbitCameraPreset('gale');
+
+  // NASA JPL Mars Trek Portal Launchers
+  const openMarsTrek = (lat, lon) => {
+    const url = 'https://trek.nasa.gov/mars/#v=0.1&x=' + lon.toFixed(4) + '&y=' + lat.toFixed(4) + '&z=10&p=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A104905';
+    window.open(url, '_blank');
+  };
+  const btnMarsTrekTop = $('btnMarsTrekTop');
+  if (btnMarsTrekTop) btnMarsTrekTop.onclick = () => openMarsTrek(PLACES[3].lat, PLACES[3].lon);
+  const btnOrbitMarsTrek = $('btnOrbitMarsTrek');
+  if (btnOrbitMarsTrek) btnOrbitMarsTrek.onclick = () => openMarsTrek(PLACES[3].lat, PLACES[3].lon);
 
   const scrubProfile = (canvas, clientX) => {
     const r = canvas.getBoundingClientRect();
