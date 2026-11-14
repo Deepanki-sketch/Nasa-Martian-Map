@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NASA Space Apps 2026 - Interplanetary Survival Guide: Martian Map | Kasukabe Defence Group</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --bg-dark: #0B0E14;
+    --card-bg: #141822;
+    --card-border: #232B3E;
+    --text-main: #E2E8F0;
+    --text-muted: #94A3B8;
+    --nasa-blue: #0B3D91;
+    --nasa-red: #FC3D21;
+    --accent-cyan: #00F0FF;
+    --accent-amber: #F59E0B;
+    --accent-green: #10B981;
+    --mars-orange: #FF5E36;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0B0E14;
+    color: var(--text-main);
+    line-height: 1.6;
+    padding: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 30px;
+  }
+
+  /* Cover & Header */
+  .cover {
+    border-bottom: 2px solid var(--card-border);
+    padding-bottom: 30px;
+    margin-bottom: 40px;
+  }
+  .agency-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(252, 61, 33, 0.12);
+    border: 1px solid rgba(252, 61, 33, 0.3);
+    color: #FF7E67;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 34px;
+    line-height: 1.2;
+    color: #FFFFFF;
+    margin-bottom: 12px;
+  }
+  .subtitle {
+    font-size: 17px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+  .team-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .team-pill {
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    color: var(--accent-cyan);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  /* Typography */
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 24px;
+    color: #FFFFFF;
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px;
+    color: var(--accent-cyan);
+    margin: 25px 0 10px;
+  }
+  p, li {
+    font-size: 15px;
+    color: #CBD5E1;
+    margin-bottom: 12px;
+  }
+  ul, ol {
+    margin-left: 22px;
+    margin-bottom: 18px;
+  }
+  li { margin-bottom: 6px; }
+
+  /* Cards & Callouts */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+  }
+  .callout {
+    border-left: 4px solid var(--mars-orange);
+    background: rgba(255, 94, 54, 0.08);
+    padding: 16px 20px;
+    margin: 20px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .callout-title {
+    font-weight: 700;
+    color: var(--mars-orange);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 14px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+  }
+  th, td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--card-border);
+  }
+  th {
+    background: #1A2130;
+    color: #FFFFFF;
+    font-weight: 600;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  /* Code & Telemetry */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    background: rgba(0, 240, 255, 0.08);
+    color: var(--accent-cyan);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: #06080C;
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 15px 0;
+  }
+  pre code {
+    background: transparent;
+    padding: 0;
+    color: #38BDF8;
+    font-size: 12.5px;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .badge-red { background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+  .badge-green { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); }
+  .badge-amber { background: rgba(245, 158, 11, 0.15); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+  /* Print Stylesheet for Perfect PDF */
+  @media print {
+    body {
+      background: #FFFFFF !important;
+      color: #1A202C !important;
+      font-size: 12pt;
+    }
+    .container { max-width: 100% !important; padding: 0 !important; }
+    .cover { page-break-after: always; border-bottom: none; }
+    h1 { color: #0B3D91 !important; }
+    h2 { color: #0B3D91 !important; border-bottom: 2px solid #CBD5E0 !important; page-break-before: always; }
+    h3 { color: #C53030 !important; }
+    p, li, td { color: #2D3748 !important; }
+    .card, pre, table {
+      background: #F7FAFC !important;
+      border: 1px solid #E2E8F0 !important;
+      page-break-inside: avoid;
+    }
+    th { background: #EDF2F7 !important; color: #1A202C !important; }
+    pre code { color: #2B6CB0 !important; }
+    code { background: #EDF2F7 !important; color: #C53030 !important; }
+    .callout {
+      background: #FFF5F5 !important;
+      border-left: 4px solid #E53E3E !important;
+      color: #1A202C !important;
+      page-break-inside: avoid;
+    }
+    .team-bar { background: #EDF2F7 !important; border: 1px solid #CBD5E0 !important; }
+    .team-pill { background: #E2E8F0 !important; color: #2B6CB0 !important; border: 1px solid #A0AEC0 !important; }
+    .no-print { display: none !important; }
+  }
+
+  .print-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--mars-orange);
+    color: #FFFFFF;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 30px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(255, 94, 54, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 1000;
+    transition: transform 0.2s ease;
+  }
+  .print-btn:hover { transform: scale(1.05); }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">
+  🖨️ Save as PDF / Print Handbook
+</button>
+
+<div class="container">
+
+  <!-- COVER PAGE -->
+  <div class="cover">
+    <div class="agency-tag">NASA Space Apps Challenge 2026 // Mission Technical Blueprint</div>
+    <h1>INTERPLANETARY SURVIVAL GUIDE:<br>MARTIAN MAP (ARES-OPS)</h1>
+    <div class="subtitle">A Layered Planetary Traverse & Survival System for Human Marswalks</div>
+    
+    <div class="team-bar">
+      <div><strong>Team:</strong> Kasukabe Defence Group</div>
+      <div><strong>Members:</strong> <span class="team-pill">Deepanki (Lead & Science)</span> <span class="team-pill">Anuj (Geospatial & Map)</span> <span class="team-pill">Anmol (UI/UX Front-End)</span> <span class="team-pill">Kafi (Data & Physics)</span></div>
+      <div><strong>Location:</strong> Raipur, India</div>
+    </div>
+  </div>
+
+  <!-- SECTION 1 -->
+  <h2>1. Challenge Mission Brief & Objectives</h2>
+  <p>
+    Over five decades of Mars exploration, NASA orbiters and robotic rovers have collected massive quantities of high-resolution elevation, thermal, spectral, and optical data. However, these datasets reside in separate scientific archives. Robotic rovers like Curiosity or Perseverance move at ~0.1 km/h and can stop for days to evaluate risks. <strong>Human astronauts cannot do this.</strong>
+  </p>
+  <p>
+    When the first crew lands on Mars, an Extravehicular Activity (EVA / "Marswalk") is strictly bounded by human physiology and spacesuit life-support consumables (typically <strong>6 to 8 hours</strong> of oxygen, battery power, and water cooling). The objective of this challenge is to fuse NASA's multi-mission planetary data into an operational, layered tactical map that empowers human explorers to accomplish critical science while guaranteeing their return to safety.
+  </p>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Mandatory Challenge Criteria & Scoring Rules</h3>
+    <ul>
+      <li><strong>Target Site & Science Goal:</strong> Select a specific site with an authentic scientific objective. The challenge explicitly highlights studying <strong>boxwork formations</strong> (such as those investigated by Curiosity at Mount Sharp in Gale Crater).</li>
+      <li><strong>Multi-Mission Data Layering:</strong> Integrate at least three distinct types of planetary data:
+        <ol>
+          <li><em>Topography & Elevation:</em> MOLA laser altimetry or HiRISE stereo DTMs (slopes, hazards).</li>
+          <li><em>Optical Imagery:</em> CTX (6 m/px) or HiRISE (30 cm/px) visible surface mosaics.</li>
+          <li><em>Compositional / Environmental:</em> CRISM mineral spectra, THEMIS thermal inertia (rock vs. loose sand), or surface meteorology.</li>
+        </ol>
+      </li>
+      <li><strong>Feasible, Hazard-Aware Route Traversal:</strong> Compute viable paths avoiding dangerous terrain (slopes &gt;15°, impassable boulder fields, sand traps) while hitting scientific sampling targets.</li>
+      <li><strong>Human-Centric Life-Support Safety:</strong> Account for astronaut metabolic load, suit mobility constraints, communication line-of-sight (LOS) to the habitat, and emergency abort margins.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 2 -->
+  <h2>2. NASA Data Sources & Access Pipeline</h2>
+  <p>
+    To build this tool without overwhelming laptops with gigabytes of raw raster files, use NASA and USGS web-tile services (WMTS/WMS) and open REST APIs:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Dataset / Sensor</th>
+        <th>Mission</th>
+        <th>Resolution</th>
+        <th>Astronaut Survival Function</th>
+        <th>Access Method / URL Template</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>MOLA Topography</strong></td>
+        <td>Mars Global Surveyor</td>
+        <td>463 m/px global</td>
+        <td>Regional slope grade, elevation drop-offs, baseline terrain relief</td>
+        <td><code>https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg</code></td>
+      </tr>
+      <tr>
+        <td><strong>HiRISE DTM / Imagery</strong></td>
+        <td>Mars Reconnaissance Orbiter</td>
+        <td>30 cm/px</td>
+        <td>Micro-hazards: meters-wide boulders, crevices, steep dune slipfaces</td>
+        <td>University of Arizona HiRISE PDS Portal (GeoTIFF / GeoJSON features) or Mars Trek local overlay</td>
+      </tr>
+      <tr>
+        <td><strong>CTX Global Mosaic</strong></td>
+        <td>Mars Reconnaissance Orbiter</td>
+        <td>6 m/px</td>
+        <td>High-resolution visual navigation, crater walls, rock strata context</td>
+        <td>Murray Lab CTX Mosaic WMTS / Trek tile stream</td>
+      </tr>
+      <tr>
+        <td><strong>THEMIS Thermal Inertia</strong></td>
+        <td>2001 Mars Odyssey</td>
+        <td>100 m/px</td>
+        <td>Differentiates solid load-bearing bedrock from soft, deep dust traps</td>
+        <td>NASA Mars Trek REST API endpoint: <code>THEMIS_DayIR_Global</code></td>
+      </tr>
+      <tr>
+        <td><strong>CRISM Mineralogy</strong></td>
+        <td>Mars Reconnaissance Orbiter</td>
+        <td>18–36 m/px</td>
+        <td>Maps hydrated clays, sulfates, and ancient water-deposited minerals</td>
+        <td>NASA Planetary Data System (PDS) Geosciences Node (Vectorized GeoJSON)</td>
+      </tr>
+      <tr>
+        <td><strong>REMS & MEDA Weather</strong></td>
+        <td>Curiosity & Perseverance</td>
+        <td>Daily time-series</td>
+        <td>Surface temperature (-110°C to +15°C), atmospheric pressure, dust opacity (&tau;)</td>
+        <td>NASA PDS Mars 2020 / MSL atmospheric archives (JSON / CSV tabular feed)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 3 -->
+  <h2>3. Science Target: Mount Sharp Boxwork Formations</h2>
+  <p>
+    The challenge specifically recommends focusing on the <strong>boxwork formations</strong> of <strong>Mount Sharp (Aeolis Mons)</strong> in Gale Crater (4.59° S, 137.44° E).
+  </p>
+
+  <div class="callout">
+    <div class="callout-title">Why Boxwork is the Ideal Scientific & Survival Showcase</div>
+    <p>
+      <strong>The Astrobiology Prize:</strong> Billions of years ago, long after Gale Crater's surface lakes evaporated, warm underground water percolated through bedrock fractures. Minerals dissolved in the water cemented the cracks. When harsh winds later eroded away the softer surrounding rock, a massive honeycomb of interconnected mineral ridges was left standing. These deep groundwater channels represent one of the last habitable environments on Mars!
+    </p>
+    <p>
+      <strong>The Survival Challenge:</strong> The boxwork ridges form a razor-sharp, jagged labyrinth stretching across 10 to 20 kilometers. For an astronaut in a pressurized spacesuit, traversing this zone carries severe risks: suit puncture hazards from sharp crystalline minerals, elevation dead-ends, and radio signal shadows.
+    </p>
+  </div>
+
+  <!-- SECTION 4 -->
+  <h2>4. Human Factors & Astronaut Safety Mathematics</h2>
+  <p>
+    To differentiate this project from typical submissions, your app should incorporate real <strong>NASA Human Research Program (HRP) EVA constraints</strong>:
+  </p>
+
+  <div class="card">
+    <h3 style="margin-top:0;">1. Terrain Traversability & Slope Grade Limit</h3>
+    <p>
+      Under Martian gravity (0.38g), a 130 kg suit + human assembly has reduced traction. 
+    </p>
+    <ul>
+      <li><strong>0° – 10° Slope:</strong> Nominal walking traverse (speed: ~2.5 to 3.5 km/h).</li>
+      <li><strong>10° – 15° Slope:</strong> Caution Zone (metabolic rate spikes by 60%, speed drops to 1.2 km/h).</li>
+      <li><strong>&gt; 15° Slope:</strong> <span class="badge badge-red">NO-GO HAZARD</span> (severe slip risk, soil shear failure, puncture hazard).</li>
+    </ul>
+
+    <h3>2. Metabolic Rate & Oxygen Consumables Formula</h3>
+    <p>The oxygen consumption rate \(\dot{V}_{O_2}\) (liters per hour) can be modeled as a function of speed \(v\) (km/h) and incline gradient \(\theta\) (degrees):</p>
+    <pre><code>// Dynamic EVA Metabolic Load Calculation
+function calculateOxygenBurn(distanceMeters, slopeDegrees, astronautWeightKg = 135) {
+  let baseRate = 0.8; // Liters O2 per km on flat terrain (nominal 300 kcal/hr)
+  let slopePenalty = 1.0;
+  
+  if (slopeDegrees > 0) {
+    slopePenalty += (slopeDegrees / 15.0) * 1.4; // 140% increase at 15 degree slope
+  }
+  
+  let o2ConsumedLiters = (distanceMeters / 1000.0) * baseRate * slopePenalty;
+  return o2ConsumedLiters;
+}</code></pre>
+
+    <h3>3. The "Walkback Horizon" (Abort Rule)</h3>
+    <p>
+      NASA flight rules mandate a <strong>45-minute contingency reserve</strong>. The app must dynamically calculate the astronaut's distance from the Habitat or Pressurized Rover. If remaining oxygen or battery equals the energy needed to walk straight back to base plus the 45-minute margin, the system triggers a flashing <span class="badge badge-amber">ABORT EVA / RETURN TO BASE</span> alert.
+    </p>
+  </div>
+
+  <!-- SECTION 5 -->
+  <h2>5. Three Complete Architectural Proposals</h2>
+
+  <!-- Proposal 1 -->
+  <div class="card" style="border-left: 4px solid var(--accent-cyan);">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="color:var(--accent-cyan); margin:0;">Proposal 1: ARES-TAC (Tactical Mission Control Surface Console)</h3>
+      <span class="badge badge-green">Recommended for Team</span>
+    </div>
+    <p style="margin-top:10px;">
+      <strong>Concept:</strong> A tactical habitat-based command console modeled after JPL's Maestro and Trek operations tools. It balances science return against crew safety.
+    </p>
+    <ul>
+      <li><strong>Frontend:</strong> React/Next.js or lightweight HTML5/Tailwind with a dark, telemetry-dense aerospace interface.</li>
+      <li><strong>Map Engine:</strong> Leaflet.js rendering NASA Mars Trek WMTS tiles (MOLA shaded relief base + HiRISE local zoom).</li>
+      <li><strong>Active Layers:</strong>
+        <ol>
+          <li><em>Slope Hazard Heatmap:</em> Areas &gt;15° shaded in transparent red.</li>
+          <li><em>Science Targets:</em> Waypoints labeled with CRISM mineralogy (Clays, Sulfates, Boxwork Formations).</li>
+          <li><em>LOS Shadow:</em> Areas blocked from UHF radio contact with the habitat.</li>
+        </ol>
+      </li>
+      <li><strong>Telemetry Bar:</strong> Displays real-time estimates of elapsed time, oxygen reserves, metabolic expenditure (kcal/hr), and terrain elevation cross-section.</li>
+    </ul>
+  </div>
+
+  <!-- Proposal 2 -->
+  <div class="card" style="border-left: 4px solid var(--mars-orange);">
+    <h3 style="color:var(--mars-orange); margin:0;">Proposal 2: HERMES-HUD (Astronaut Wearable Traversal & Safe Pathfinding)</h3>
+    <p style="margin-top:10px;">
+      <strong>Concept:</strong> Designed from the perspective of an astronaut walking inside a pressurized spacesuit looking through a heads-up display.
+    </p>
+    <ul>
+      <li><strong>Touch-Optimized UI:</strong> Large, high-contrast touch targets suitable for thick suit gloves and gold-tinted visors.</li>
+      <li><strong>Automated Safe Pathfinding:</strong> The user selects a target sample rock; the A* routing algorithm automatically plots a traverse avoiding steep slopes and boulder fields.</li>
+      <li><strong>Live "Walkback Horizon":</strong> Visual circle showing the maximum safe walking radius before oxygen limits require heading back.</li>
+    </ul>
+  </div>
+
+  <!-- Proposal 3 -->
+  <div class="card" style="border-left: 4px solid #A855F7;">
+    <h3 style="color:#C084FC; margin:0;">Proposal 3: ISRU-PATHFINDER (Long-Term Survival & Resource Expedition Map)</h3>
+    <p style="margin-top:10px;">
+      <strong>Concept:</strong> Focuses on In-Situ Resource Utilization (ISRU) and colony expansion.
+    </p>
+    <ul>
+      <li><strong>Subsurface Ice Mapping:</strong> Incorporates SHARAD radar data and NASA SWIM (Subsurface Water Ice Mapping) to locate water ice within 1–2 meters of the surface.</li>
+      <li><strong>Radiation Shielding Analysis:</strong> Identifies natural lava tubes and crater rim overhangs that offer protection from Solar Particle Events (SPE).</li>
+      <li><strong>Base Camp Scoring:</strong> Clicking any coordinate provides a suitability rating (0–100) based on ice access, slope stability, and solar exposure.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 6 -->
+  <h2>6. NASA Design System & Eliminating "AI Slop"</h2>
+  <div class="card">
+    <p>Judges immediately notice and penalize generic designs with bright purple gradients, vague chatbots, or unrealistic sci-fi fluff. To look like an authentic NASA tool:</p>
+    <ul>
+      <li><strong>Color Standards:</strong> Deep space carbon background (<code>#0B0E14</code> or <code>#141822</code>), telemetry cyan (<code>#00F0FF</code>), alert crimson (<code>#EF4444</code>), warning amber (<code>#F59E0B</code>), and nominal green (<code>#10B981</code>).</li>
+      <li><strong>Typography:</strong> Use clean technical typefaces: <code>Space Grotesk</code> or <code>Inter</code> for titles, and monospaced <code>JetBrains Mono</code> or <code>Roboto Mono</code> for telemetry values, coordinates, and times.</li>
+      <li><strong>Martian Coordinates:</strong> Always use real planetocentric coordinates (e.g., Mount Sharp: <code>4°35'22" S, 137°26'30" E</code>).</li>
+      <li><strong>Elevation Profile:</strong> Include an interactive cross-section graph beneath the map showing the climb from crater floor to the boxwork ridges.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 7 -->
+  <h2>7. Team Role Allocation & 48-Hour Sprint Roadmap</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Team Member</th>
+        <th>Specialized Role</th>
+        <th>Sprint Responsibilities & Deliverables</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Deepanki (Lead)</strong></td>
+        <td>Project Lead, Science & Systems Architecture</td>
+        <td>
+          • Coordinates team deliverables and challenge compliance.<br>
+          • Researches Mount Sharp boxwork science objectives and NASA citations.<br>
+          • Directs the 240-second pitch video and final submission slide deck.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Anuj</strong></td>
+        <td>Geospatial & Map Integration</td>
+        <td>
+          • Sets up the Leaflet.js map engine with NASA Mars Trek WMTS tile layers.<br>
+          • Encodes Mount Sharp waypoints, hazard zones, and routes in GeoJSON.<br>
+          • Manages zoom, layer toggles, and coordinate tracking.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Anmol</strong></td>
+        <td>UI/UX & Tactical Front-End</td>
+        <td>
+          • Builds the mission-control interface (dark aerospace theme, telemetry cards).<br>
+          • Creates the elevation cross-section graph and responsive sidebar.<br>
+          • Ensures clean typography, high contrast, and smooth interactive controls.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Kafi</strong></td>
+        <td>Data Pipeline & EVA Physics Engine</td>
+        <td>
+          • Formats NASA PDS REMS weather data into JSON feeds.<br>
+          • Implements the slope penalty and oxygen consumption algorithm.<br>
+          • Builds the dynamic "Walkback Horizon" safety calculator.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 8 -->
+  <h2>8. Quick-Start Code Template (Leaflet + NASA WMTS)</h2>
+  <pre><code>&lt;!-- Basic Leaflet Mars Map Initialization with NASA Mars Trek WMTS --&gt;
+&lt;div id="mars-map" style="width: 100%; height: 500px;"&gt;&lt;/div&gt;
+
+&lt;script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  // Initialize map centered at Mount Sharp in Gale Crater
+  const map = L.map('mars-map', {
+    center: [-4.5895, 137.4417],
+    zoom: 7,
+    crs: L.CRS.EPSG4326 // Equirectangular projection
+  });
+
+  // Layer 1: NASA MOLA Elevation Shaded Relief (WMTS)
+  const molaLayer = L.tileLayer('https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg', {
+    maxZoom: 10,
+    attribution: 'NASA / JPL / GSFC'
+  }).addTo(map);
+
+  // Add Mount Sharp Boxwork Target Marker
+  L.marker([-4.5895, 137.4417]).addTo(map)
+    .bindPopup('&lt;b&gt;MOUNT SHARP BOXWORK RIDGE&lt;/b&gt;&lt;br&gt;Target: Ancient Hydrothermal Veins&lt;br&gt;Status: High Science Priority');
+&lt;/script&gt;</code></pre>
+
+  <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--card-border); color: var(--text-muted); font-size: 13px;">
+    NASA Space Apps Challenge 2026 // Prepared for Team Kasukabe Defence Group (Deepanki, Anuj, Anmol, Kafi)
+  </div>
+
+</div>
+
+</body>
+</html>

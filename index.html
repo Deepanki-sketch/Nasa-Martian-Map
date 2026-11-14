@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mars Maps // Gale Crater Expedition</title>
+  
+  <!-- Leaflet GIS Engine -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  
+  <!-- Three.js for 360° Mars Street View & 3D Globe -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-gmaps">
+
+  <!-- Full-Bleed Map Canvas -->
+  <div id="fullbleed-map"></div>
+
+  <!-- Interactive 3D Mars Mini-Globe (Top Left) -->
+  <div id="mars-3d-widget" class="mars-3d-widget" title="3D Mars Globe · Drag to spin, tap to explore">
+    <div id="mars-3d-canvas-container" class="mars-3d-canvas-container"></div>
+    <div class="mars-3d-badge">
+      <span class="live-dot"></span>
+      <span class="badge-text">3D GLOBE</span>
+    </div>
+  </div>
+
+  <!-- TOP: Google Maps Directions Bar -->
+  <div class="top-nav-container">
+    <div class="gmaps-directions-card" id="directions-card">
+      <div class="directions-route-column">
+        <!-- Start Point (Blue Dot) -->
+        <div class="route-point-row">
+          <span class="gmaps-bullet start-bullet"></span>
+          <span class="route-point-label" title="Base Camp">Your Location (Base Camp)</span>
+        </div>
+        
+        <div class="route-connector-line"></div>
+
+        <!-- End Destination (Red Pin) -->
+        <div class="route-point-row destination-trigger" id="btn-open-destinations" title="Tap to change destination">
+          <span class="gmaps-bullet end-bullet"></span>
+          <span class="route-point-label dest-name" id="active-dest-label">Boxwork Ridge</span>
+          <span class="change-dest-pill">Change</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons (Clean SVG Icons - No Emojis) -->
+      <div class="directions-actions">
+        <button id="btn-guide" class="gmaps-round-btn" title="How to use / Simple Guide">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </button>
+        <button id="btn-layers" class="gmaps-round-btn" title="Map Layers & Views">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+            <polyline points="2 17 12 22 22 17"/>
+            <polyline points="2 12 12 17 22 12"/>
+          </svg>
+        </button>
+        <button id="btn-menu" class="gmaps-round-btn" title="Mission Telemetry & Weather">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Google Maps Destination Picker Dropdown -->
+  <div id="destination-drawer" class="destination-drawer">
+    <div class="dest-drawer-header">
+      <div class="dest-drawer-title">CHOOSE A PLACE ON MARS</div>
+      <div class="dest-drawer-hint">Tap any site or click anywhere on the red map to drop a pin</div>
+    </div>
+    <div class="dest-list" id="dest-list">
+      <!-- Populated via JavaScript -->
+    </div>
+  </div>
+
+  <!-- Floating Map Controls (Right Side) -->
+  <div class="map-floating-controls">
+    <!-- Google Maps Street View Pegman Button (Yellow Man) -->
+    <button id="btn-streetview-toggle" class="gmaps-floating-btn pegman-btn" title="Mars Street View · Look around in 360°" aria-label="Mars Street View">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <!-- Google Maps Pegman Silhouette -->
+        <circle cx="12" cy="4" r="3.2" fill="#F4B400"/>
+        <path d="M14.5 8h-5C8.7 8 8 8.7 8 9.5V14h2v7h4v-7h2V9.5c0-.8-.7-1.5-1.5-1.5z" fill="#F4B400"/>
+      </svg>
+    </button>
+
+    <!-- Recenter on My Location (Blue Target) -->
+    <button id="btn-recenter" class="gmaps-floating-btn" title="Re-center on Your Location" aria-label="Re-center">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="#1A73E8">
+        <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Map Layers Popover -->
+  <div id="layers-popover" class="layers-popover">
+    <div class="popover-title">MAP IMAGERY</div>
+    <div class="basemap-selector-group">
+      <label class="basemap-radio-row">
+        <input type="radio" name="basemap-choice" value="satellite" checked>
+        <span class="basemap-label">
+          <strong>Mars Satellite (Viking Orbital)</strong>
+          <small>Natural surface craters, dunes & mountain</small>
+        </span>
+      </label>
+      <label class="basemap-radio-row">
+        <input type="radio" name="basemap-choice" value="topo_mola">
+        <span class="basemap-label">
+          <strong>Elevation Colors (MOLA)</strong>
+          <small>Blue crater floor to high yellow mountain</small>
+        </span>
+      </label>
+      <label class="basemap-radio-row">
+        <input type="radio" name="basemap-choice" value="contours">
+        <span class="basemap-label">
+          <strong>Geology Survey Chart</strong>
+          <small>USGS topography contour lines</small>
+        </span>
+      </label>
+    </div>
+
+    <div class="popover-divider"></div>
+
+    <div class="popover-title">HAZARD OVERLAYS</div>
+    <label class="layer-toggle-row">
+      <span>Deep Sand Dunes & Steep Cliffs</span>
+      <input type="checkbox" id="chk-topo">
+    </label>
+    <label class="layer-toggle-row">
+      <span>Curiosity Rover Landmarks</span>
+      <input type="checkbox" id="chk-science" checked>
+    </label>
+    <label class="layer-toggle-row">
+      <span>Gale Crater Orbital Photo</span>
+      <input type="checkbox" id="chk-orbital-photo">
+    </label>
+    <label class="layer-toggle-row">
+      <span>Space Radiation Zone</span>
+      <input type="checkbox" id="chk-rad">
+    </label>
+  </div>
+
+  <!-- BOTTOM: Google Maps Style Navigation Card -->
+  <div id="bottom-sheet" class="bottom-sheet collapsed">
+    <!-- Drag Handle -->
+    <div class="sheet-handle-bar" id="sheet-handle">
+      <div class="sheet-handle"></div>
+    </div>
+
+    <!-- Live Oxygen Bar (Visible during navigation) -->
+    <div id="live-oxygen-bar-container" class="live-oxygen-bar-container">
+      <div id="live-oxygen-bar" class="live-oxygen-bar"></div>
+    </div>
+
+    <!-- Google Maps Trip Summary Preview -->
+    <div id="sheet-summary-bar" class="sheet-summary-bar">
+      <div class="gmaps-eta-group">
+        <div class="gmaps-time-row">
+          <span class="gmaps-primary-time" id="summary-time">3 hr 52 min</span>
+          <span class="gmaps-dist" id="summary-dist">(11.6 km)</span>
+        </div>
+        <div class="gmaps-route-sub" id="summary-sub">
+          <span class="svg-inline-icon">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7"/>
+            </svg>
+          </span>
+          <span id="summary-elevation-txt">Elev: -3,950m (512m uphill)</span> · <span id="summary-safety-tag" class="safety-tag-safe">Oxygen Safe</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons Row -->
+      <div class="sheet-actions-group">
+        <!-- Open Street View Button -->
+        <button id="btn-open-streetview-card" class="gmaps-streetview-btn" title="View in Mars Street View">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="#F4B400">
+            <circle cx="12" cy="4" r="3" fill="#F4B400"/>
+            <path d="M14 8h-4c-.6 0-1 .4-1 1v4h1.5v6h3v-6H15V9c0-.6-.4-1-1-1z" fill="#F4B400"/>
+          </svg>
+          <span>Street View</span>
+        </button>
+
+        <!-- Primary Start Button -->
+        <button id="btn-start-eva" class="gmaps-start-btn">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
+          </svg>
+          <span>Start</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Navigation Mode Bar (When Start is pressed) -->
+    <div id="sheet-active-bar" class="sheet-active-bar">
+      <div class="nav-step-banner">
+        <div class="nav-turn-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="#1A73E8">
+            <path d="M12 4l-8 8h5v8h6v-8h5z"/>
+          </svg>
+        </div>
+        <div class="nav-step-text">
+          <div class="nav-step-primary" id="nav-step-instruction">Walk South toward Mount Sharp foothills</div>
+          <div class="nav-step-sub" id="nav-step-telemetry">Remaining O2: 100% · Elapsed: T+ 00:00</div>
+        </div>
+      </div>
+      <button id="btn-return-hab" class="gmaps-exit-btn">Exit</button>
+    </div>
+
+    <!-- Expanded Sheet Details (Landmark Photos & Elevation Chart) -->
+    <div id="sheet-expanded-content" class="sheet-expanded-content">
+      <div class="wp-header-row">
+        <div>
+          <h2 id="sheet-wp-title" class="sheet-wp-title">Boxwork Ridge</h2>
+          <div id="sheet-wp-sub" class="sheet-wp-sub">Curiosity Landmark · Elevation -3,950 meters</div>
+        </div>
+        <button id="btn-close-sheet" class="btn-close-sheet">Close</button>
+      </div>
+
+      <!-- Real NASA Surface Photo -->
+      <div class="wp-photo-wrapper">
+        <img id="sheet-wp-photo" class="sheet-wp-photo" src="images/boxwork_mastcam.jpg" alt="Curiosity Surface Observation">
+        <div id="sheet-wp-photo-fallback" class="sheet-wp-photo-fallback">Photo not available for this coordinate</div>
+      </div>
+      <div id="sheet-wp-caption" class="sheet-wp-caption">Curiosity Mastcam 360-degree panorama inside the boxwork ridges</div>
+
+      <div class="wp-short-lines">
+        <div id="sheet-wp-line1" class="wp-line"><strong>What you see:</strong> Mineral walls standing 1 to 2 meters high along underground cracks.</div>
+        <div id="sheet-wp-line2" class="wp-line"><strong>Walking terrain:</strong> Sharp rocky ridges. Step carefully to protect spacesuit.</div>
+      </div>
+
+      <div class="sheet-section-title">ELEVATION PROFILE & CLIMB</div>
+      <canvas id="sheet-elevation-canvas" class="sheet-elevation-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       FULL-SCREEN IMMERSIVE MARS STREET VIEW (360° PANORAMA)
+       ===================================================================== -->
+  <div id="streetview-overlay" class="streetview-overlay">
+    <!-- 360 Panorama Canvas Container -->
+    <div id="streetview-canvas-container" class="streetview-canvas-container"></div>
+
+    <!-- Street View Top Navigation Bar -->
+    <div class="streetview-top-bar">
+      <button id="btn-exit-streetview" class="streetview-back-btn" title="Back to Map">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </button>
+
+      <div class="streetview-header-title">
+        <div class="sv-site-name" id="sv-site-name">Boxwork Ridge</div>
+        <div class="sv-site-sub" id="sv-site-sub">Mars Street View · Gale Crater</div>
+      </div>
+
+      <div class="streetview-compass-badge" id="sv-compass-badge">
+        <span class="compass-needle" id="sv-compass-needle"></span>
+        <span id="sv-compass-text">185° S</span>
+      </div>
+    </div>
+
+    <!-- Street View Bottom Telemetry & Elevation HUD -->
+    <div class="streetview-bottom-hud">
+      <div class="sv-hud-card">
+        <div class="sv-metric">
+          <span class="sv-metric-label">ELEVATION</span>
+          <span class="sv-metric-val" id="sv-elev-val">-3,950 m</span>
+          <span class="sv-metric-hint" id="sv-elev-hint">512m above base camp</span>
+        </div>
+
+        <div class="sv-metric-divider"></div>
+
+        <div class="sv-metric">
+          <span class="sv-metric-label">DISTANCE FROM BASE</span>
+          <span class="sv-metric-val" id="sv-dist-val">11.6 km</span>
+          <span class="sv-metric-hint">~3 hr 52 min walk</span>
+        </div>
+
+        <div class="sv-metric-divider"></div>
+
+        <div class="sv-metric">
+          <span class="sv-metric-label">GROUND SLOPE</span>
+          <span class="sv-metric-val" id="sv-slope-val">14.5° Uphill</span>
+          <span class="sv-metric-hint">Rocky knife-edge ridges</span>
+        </div>
+
+        <div class="sv-metric-divider"></div>
+
+        <div class="sv-metric">
+          <span class="sv-metric-label">WEATHER</span>
+          <span class="sv-metric-val">-38°C</span>
+          <span class="sv-metric-hint">Clear sky · Light red haze</span>
+        </div>
+      </div>
+
+      <!-- Sunlight Angle & Time of Sol Controller -->
+      <div class="sv-solar-panel">
+        <div class="sv-solar-header">
+          <span class="sv-solar-title">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            SUNLIGHT & SOLAR ANGLE
+          </span>
+          <div class="sv-solar-readouts">
+            <span>Elevation: <strong id="sv-sun-elev-text">35°</strong></span>
+            <span>Azimuth: <strong id="sv-sun-az-text">245° SW</strong></span>
+            <span>Solar Flux: <strong id="sv-sun-flux-text">485 W/m²</strong></span>
+          </div>
+        </div>
+
+        <div class="sv-solar-controls">
+          <div class="sv-solar-presets">
+            <button class="sv-sun-btn" data-preset="dawn">Dawn 06:00</button>
+            <button class="sv-sun-btn" data-preset="midday">Midday 11:30</button>
+            <button class="sv-sun-btn active" data-preset="afternoon">Afternoon 15:00</button>
+            <button class="sv-sun-btn" data-preset="sunset">Blue Sunset 18:15</button>
+            <button class="sv-sun-btn" data-preset="night">Night 22:00</button>
+          </div>
+          <div class="sv-solar-slider-row">
+            <span class="slider-label">Sun Elevation:</span>
+            <input type="range" id="sv-sun-slider" min="-20" max="80" value="35" step="1">
+            <span id="sv-slider-val" class="slider-val">35°</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Survey Category Switcher: Local Gale vs Global Mars -->
+      <div class="sv-category-bar">
+        <button class="sv-cat-btn active" id="btn-cat-gale">Gale Crater Route</button>
+        <button class="sv-cat-btn" id="btn-cat-planetary">Survey Mars Planet Sites</button>
+      </div>
+
+      <!-- Quick Location Jump Tabs (Gale Crater) -->
+      <div class="sv-quick-tabs" id="sv-tabs-gale">
+        <button class="sv-tab-btn" data-wp="0">Base Camp</button>
+        <button class="sv-tab-btn" data-wp="1">Pahrump Hills</button>
+        <button class="sv-tab-btn" data-wp="2">Vera Rubin</button>
+        <button class="sv-tab-btn active" data-wp="4">Boxwork Ridge</button>
+        <button class="sv-tab-btn" data-wp="5">Gediz Vallis</button>
+      </div>
+
+      <!-- Planetary Survey Sites (Across Mars) -->
+      <div class="sv-quick-tabs sv-planetary-tabs" id="sv-tabs-planetary" style="display: none;">
+        <button class="sv-planet-btn active" data-site="SITE-GALE">Gale / Boxwork</button>
+        <button class="sv-planet-btn" data-site="SITE-JEZERO">Jezero Delta</button>
+        <button class="sv-planet-btn" data-site="SITE-OLYMPUS">Olympus Mons (+21km)</button>
+        <button class="sv-planet-btn" data-site="SITE-VALLES">Valles Marineris (-5.2km)</button>
+        <button class="sv-planet-btn" data-site="SITE-GUSEV">Gusev Crater</button>
+        <button class="sv-planet-btn" data-site="SITE-MERIDIANI">Meridiani Planum</button>
+        <button class="sv-planet-btn" data-site="SITE-UTOPIA">Utopia Ice Sheet</button>
+      </div>
+
+      <div class="sv-drag-hint">Drag anywhere to look 360° around Mars · Scroll to zoom</div>
+    </div>
+  </div>
+
+  <!-- HOW TO USE / GUIDE MODAL (Simple, Plain English) -->
+  <div id="guide-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-tag">MARS MAPS GUIDE</span>
+          <h2>How This Map Works</h2>
+        </div>
+        <button id="btn-close-guide" class="btn-close-modal">✕</button>
+      </div>
+
+      <div class="guide-grid">
+        <div class="guide-card">
+          <div class="guide-card-icon loc">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="#1A73E8">
+              <circle cx="12" cy="12" r="8"/>
+            </svg>
+          </div>
+          <div class="guide-card-content">
+            <h3>Your Location (Blue Dot)</h3>
+            <p>You start at <strong>Base Camp</strong> on the flat crater plain. The pulsing blue dot shows where your habitat is right now.</p>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-card-icon path">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="#EA4335">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+          </div>
+          <div class="guide-card-content">
+            <h3>Destination (Red Pin)</h3>
+            <p>The red pin is where you're walking. Tap <strong>"Change"</strong> in the top search bar to pick landmarks, or <strong>click anywhere on Mars</strong> to drop a pin.</p>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-card-icon ring">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#1A73E8" stroke-width="2" stroke-dasharray="3 3">
+              <circle cx="12" cy="12" r="9"/>
+            </svg>
+          </div>
+          <div class="guide-card-content">
+            <h3>Oxygen Safety Ring (Walkback Circle)</h3>
+            <p>The dashed blue ring around your base shows your <strong>oxygen safety limit</strong> (3.2 km). As long as you stay inside this ring, you have enough suit oxygen to walk back safely. Going beyond it requires a rover!</p>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-card-icon sv">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="#F4B400">
+              <circle cx="12" cy="4" r="3"/>
+              <path d="M14 8h-4c-.6 0-1 .4-1 1v4h1.5v6h3v-6H15V9c0-.6-.4-1-1-1z"/>
+            </svg>
+          </div>
+          <div class="guide-card-content">
+            <h3>Mars Street View</h3>
+            <p>Tap the <strong>yellow Pegman button</strong> or the <strong>Street View button</strong> to stand on the surface and look around 360° at real Curiosity rover panoramic photos with live elevation.</p>
+          </div>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-card-icon eva">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="#1E8E3E">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+          </div>
+          <div class="guide-card-content">
+            <h3>Start Walking</h3>
+            <p>Tap the green <strong>"Start"</strong> button to simulate the walk with live suit oxygen burn and GPS tracking.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-dismiss-guide" class="gmaps-start-btn btn-guide-done">Got It — Start Exploring</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3D ORBIT VIEW MODAL -->
+  <div id="orbit-3d-modal" class="modal-overlay">
+    <div class="modal-card orbit-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-tag">PLANETARY VIEW</span>
+          <h2>Interactive 3D Mars</h2>
+        </div>
+        <button id="btn-close-3d" class="btn-close-modal">✕</button>
+      </div>
+
+      <div class="orbit-3d-body">
+        <div id="large-mars-canvas-container" class="large-mars-container"></div>
+        <div class="orbit-info-panel">
+          <div class="orbit-stat">
+            <span class="stat-label">SITE:</span>
+            <span class="stat-val">Gale Crater / Mount Sharp</span>
+          </div>
+          <div class="orbit-stat">
+            <span class="stat-label">COORDINATES:</span>
+            <span class="stat-val">4°35' S, 137°26' E</span>
+          </div>
+          <div class="orbit-stat">
+            <span class="stat-label">HOW TO USE:</span>
+            <span class="stat-val">Click and drag with mouse or finger to spin</span>
+          </div>
+          <button id="btn-zoom-to-gale" class="gmaps-start-btn btn-orbit-zoom">Fly Camera to Gale Crater</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU / WEATHER & SOURCES SHEET -->
+  <div id="menu-modal" class="menu-modal">
+    <div class="menu-modal-content">
+      <div class="menu-header">
+        <h3>Mission Weather & Sources</h3>
+        <button id="btn-close-menu" class="btn-close-sheet">Done</button>
+      </div>
+
+      <div class="menu-section">
+        <div class="menu-label">CURRENT MARS WEATHER (SOL 4320)</div>
+        <div class="telemetry-compact-grid">
+          <div>Ground Temp: <strong>-38°C (-36°F)</strong></div>
+          <div>Air Temp: <strong>-52°C (-62°F)</strong></div>
+          <div>Atmosphere: <strong>748 Pa (Thin CO2)</strong></div>
+          <div>Radiation: <strong>0.21 mGy/day (Normal)</strong></div>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <div class="menu-label">DATA SOURCES</div>
+        <div class="sources-text">
+          <p><strong>Topography:</strong> NASA Mars Global Surveyor (MGS) MOLA laser altimetry.</p>
+          <p><strong>Surface Photography:</strong> NASA Curiosity Rover Mastcam panoramas and MRO HiRISE orbital cameras.</p>
+          <p><strong>Environment:</strong> NASA MSL REMS daily surface weather and RAD radiation measurements.</p>
+        </div>
+      </div>
+
+      <div class="menu-footer">
+        NASA / JPL-Caltech / MSSS / University of Arizona / USGS Astrogeology Science Center
+      </div>
+    </div>
+  </div>
+
+  <script src="mars_data.js"></script>
+  <script src="mars_panoramas.js"></script>
+  <script src="eva_physics.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
