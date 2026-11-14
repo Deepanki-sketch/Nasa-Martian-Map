@@ -37,7 +37,37 @@ const MARS_DATA = {
       surfaceGround: "Flat red bedrock covered with thin dust. Very easy to walk on.",
       photoLocal: "images/pahrump_hills.jpg",
       photoCaption: "View looking south across the crater floor toward Mount Sharp.",
-      streetViewAvailable: true
+      streetViewAvailable: true,
+      historicalDossier: {
+        priority1: {
+          tag: "P1 · PRIMARY HABITAT",
+          title: "Expedition Landing Site & Life Support Sanctuary",
+          keyDiscovery: "Bradbury Landing alluvial flat provides a stable, bedrock foundation shielded from severe crater-rim wind turbulence.",
+          habitability: "High structural stability. Base camp houses the oxygen generation plant (MOXIE-scale), water extraction unit, and sealed pressurized habitat.",
+          scienceValue: "Anchor point for the 45-minute mandatory contingency walkback perimeter."
+        },
+        priority2: {
+          tag: "P2 · MISSION ARCHIVE",
+          solDiscovered: "Sol 0 (August 5, 2012)",
+          instrument: "NASA MSL Curiosity Entry, Descent & Landing (EDL) Sky Crane",
+          historicalArchive: "Curiosity touched down precisely on target inside Gale Crater, named in honor of author Ray Bradbury. Past descent imagery confirmed meter-thick bedrock under light regolith."
+        },
+        priority3: {
+          tag: "P3 · MINERALOGY",
+          minerals: [
+            { name: "Basaltic Sand & Silt", pct: "52%" },
+            { name: "Plagioclase Feldspar", pct: "28%" },
+            { name: "Amorphous Silica", pct: "20%" }
+          ],
+          spectroscopy: "Low hydration signatures; dry basaltic regolith pavement."
+        },
+        priority4: {
+          tag: "P4 · SUIT PROTOCOL",
+          hazardLevel: "Nominal / Low Risk",
+          suitPunctureRisk: "Low (smooth regolith)",
+          protocolRules: "Nominal xEMU suit egress; perform airlock seal integrity check before stepping off the access ramp."
+        }
+      }
     },
     {
       id: "WP-01",
@@ -51,7 +81,37 @@ const MARS_DATA = {
       surfaceGround: "Gentle slope. Firm footing for spacesuit boots.",
       photoLocal: "images/pahrump_hills.jpg",
       photoCaption: "Curiosity Mastcam photo of layered rock shelves at Pahrump Hills.",
-      streetViewAvailable: true
+      streetViewAvailable: true,
+      historicalDossier: {
+        priority1: {
+          tag: "P1 · LAKEBED SEDIMENT",
+          title: "Proof of Ancient Habitable Gale Crater Lake",
+          keyDiscovery: "Fine-grained mudstone (Murray Formation) deposited over millions of years by tranquil, standing lake water. Neutral pH and low salinity.",
+          habitability: "Ancient habitability verified; contains bio-essential elements: Carbon, Hydrogen, Oxygen, Nitrogen, Phosphorus, Sulfur (CHNOPS).",
+          scienceValue: "Prime astrobiology target for fossilized microbial biosignature preservation."
+        },
+        priority2: {
+          tag: "P2 · MISSION ARCHIVE",
+          solDiscovered: "Sol 753 - Sol 790 (September 2014)",
+          instrument: "Curiosity Mastcam & ChemCam Laser Spectrometer",
+          historicalArchive: "Curiosity conducted its first drill campaigns into the basal Murray Formation here ('Confidence Hills' drill hole). Mastcam revealed distinctive cross-bedded sandstone shelves."
+        },
+        priority3: {
+          tag: "P3 · MINERALOGY",
+          minerals: [
+            { name: "Smectite Clay Minerals", pct: "42%" },
+            { name: "Magnetite & Hematite", pct: "31%" },
+            { name: "Calcium Sulfate Veins", pct: "27%" }
+          ],
+          spectroscopy: "Strong octahedral Fe/Mg-OH absorption band at 2.3 μm indicating prolonged water-rock interactions."
+        },
+        priority4: {
+          tag: "P4 · SUIT PROTOCOL",
+          hazardLevel: "Low to Moderate Risk",
+          suitPunctureRisk: "Low; crumbly mudstone shelves",
+          protocolRules: "Avoid stepping on protruding thin shale edges to prevent boot scuffing and suit balance instability."
+        }
+      }
     },
     {
       id: "WP-02",
@@ -65,7 +125,37 @@ const MARS_DATA = {
       surfaceGround: "Steep climb over hard rocky ridges. Take your time to save oxygen.",
       photoLocal: "images/vera_rubin.jpg",
       photoCaption: "Curiosity photo looking back down the slope from the top of the iron ridge.",
-      streetViewAvailable: true
+      streetViewAvailable: true,
+      historicalDossier: {
+        priority1: {
+          tag: "P1 · OXIDATION EVENT",
+          title: "Red Crystalline Hematite & Ancient Groundwater Plumes",
+          keyDiscovery: "Massive hard iron-oxide ridge formed by acidic to neutral groundwater mixing that precipitated gray and red crystalline hematite along regional fractures.",
+          habitability: "Moderate; marks the transition zone where groundwater became progressively more oxidized as the climate dried out.",
+          scienceValue: "Critical recorder of Mars's atmospheric oxygenation and climatic drying transition."
+        },
+        priority2: {
+          tag: "P2 · MISSION ARCHIVE",
+          solDiscovered: "Sol 1800 - Sol 2300 (September 2017 - January 2019)",
+          instrument: "Curiosity MAHLI, APXS & CRISM Orbiter Targeted Observation",
+          historicalArchive: "Named in honor of astronomer Vera Rubin. Curiosity spent 16 months traversing this ridge, drilling exceptionally hard targets ('Stoer', 'Rock Hall') that tested the rover's percussion drill to its limits."
+        },
+        priority3: {
+          tag: "P3 · MINERALOGY",
+          minerals: [
+            { name: "Crystalline Hematite (Fe2O3)", pct: "58%" },
+            { name: "Ferrihydrite & Goethite", pct: "24%" },
+            { name: "Quartz / Silicates", pct: "18%" }
+          ],
+          spectroscopy: "Distinctive 860 nm hematite absorption band identified from orbit by MRO CRISM."
+        },
+        priority4: {
+          tag: "P4 · SUIT PROTOCOL",
+          hazardLevel: "Moderate to High (12.8° Incline)",
+          suitPunctureRisk: "Moderate (hard flint-like chert & hematite spurs)",
+          protocolRules: "Maintain three points of contact on steep ascent. Reduce pace to keep suited metabolic rate below 380 kcal/hr."
+        }
+      }
     },
     {
       id: "WP-03",
@@ -79,7 +169,37 @@ const MARS_DATA = {
       surfaceGround: "Rocky benches with loose sand and gravel ribbons.",
       photoLocal: null,
       photoCaption: "High-resolution orbital satellite photograph.",
-      streetViewAvailable: false
+      streetViewAvailable: false,
+      historicalDossier: {
+        priority1: {
+          tag: "P1 · DESICCATION EPOCH",
+          title: "Evaporite Salt Flats of the Great Martian Drying",
+          keyDiscovery: "Polyhydrated magnesium and calcium sulfates (gypsum, bassanite) deposited as ancient lakes evaporated away into hyper-saline brines.",
+          habitability: "Extreme halophile / brine environment. Salts act as natural radiation shields capable of shielding dormant microbial spores.",
+          scienceValue: "Essential for understanding how surface liquid water vanished from Mars ~3 billion years ago."
+        },
+        priority2: {
+          tag: "P2 · MISSION ARCHIVE",
+          solDiscovered: "Sol 3200 - Sol 3700 (August 2021 - February 2023)",
+          instrument: "Curiosity CheMin X-ray Diffraction & DAN Neutron Detector",
+          historicalArchive: "Curiosity discovered unique 'popcorn' textured nodules and polygonal desiccation cracks, signaling repeated wet-dry seasonal cycles on early Mars."
+        },
+        priority3: {
+          tag: "P3 · MINERALOGY",
+          minerals: [
+            { name: "Magnesium Sulfates (Starkeyite)", pct: "46%" },
+            { name: "Calcium Sulfate (Gypsum)", pct: "34%" },
+            { name: "Clay Residues", pct: "20%" }
+          ],
+          spectroscopy: "Hydration water absorption at 1.9 μm and sulfate doublet features at 2.4 μm."
+        },
+        priority4: {
+          tag: "P4 · SUIT PROTOCOL",
+          hazardLevel: "Moderate Risk",
+          suitPunctureRisk: "Low to Moderate; slippery sulfate crystals",
+          protocolRules: "Loose gravel ribbons reduce boot traction. Ensure crampon spikes are engaged on spacesuit boots."
+        }
+      }
     },
     {
       id: "WP-04",
@@ -93,7 +213,37 @@ const MARS_DATA = {
       surfaceGround: "Sharp, knife-edge rocky blades. Step carefully to avoid tearing your spacesuit.",
       photoLocal: "images/boxwork_mastcam.jpg",
       photoCaption: "360-degree Curiosity Mastcam panorama inside the boxwork mineral ridge maze.",
-      streetViewAvailable: true
+      streetViewAvailable: true,
+      historicalDossier: {
+        priority1: {
+          tag: "P1 · SUBTERRANEAN HAVEN",
+          title: "Subsurface Hydrothermal Vein Maze & Last Habitable Oasis",
+          keyDiscovery: "Extensive polygonal boxwork networks: warm subterranean water carrying dissolved minerals seeped through deep tectonic bedrock fractures. As softer rock eroded over billions of years, the hard mineralized veins stood standing as towering 1-2 meter walls.",
+          habitability: "Highest priority on Mars. Subsurface hydrothermal veins offered protection from deadly surface UV and galactic cosmic radiation during Mars's final habitable era.",
+          scienceValue: "Prime candidate for intact subterranean biomarkers and preserved organic carbon molecules."
+        },
+        priority2: {
+          tag: "P2 · MISSION ARCHIVE",
+          solDiscovered: "Sol 4250 - Present (2024 - 2026)",
+          instrument: "Curiosity Mastcam 360 Gigapan & HiRISE High-Res Stereo Orbital Imaging",
+          historicalArchive: "Discovered on the upper slopes of Mount Sharp. Curiosity entered the labyrinth of boxwork ridges, capturing the first in-situ ground photographs of these structures ever seen on another planet."
+        },
+        priority3: {
+          tag: "P3 · MINERALOGY",
+          minerals: [
+            { name: "Silica-Cemented Hydrothermal Veins", pct: "64%" },
+            { name: "Polyhydrated Sulfate Cement", pct: "22%" },
+            { name: "Iron-Magnesium Carbonates", pct: "14%" }
+          ],
+          spectroscopy: "Elevated silica peaks and hydroxyl overtone features confirmed by orbital CRISM and surface ChemCam."
+        },
+        priority4: {
+          tag: "P4 · SUIT PROTOCOL",
+          hazardLevel: "High Risk (Sharp Mineral Blades & 14.5° Slope)",
+          suitPunctureRisk: "CRITICAL: Razor-sharp mineral curbs capable of puncturing pressurized suit outer beta-cloth layers",
+          protocolRules: "Strict 1-meter standoff from narrow boxwork fins. Do not climb over blade tops. Keep tether engaged."
+        }
+      }
     },
     {
       id: "WP-05",
@@ -107,7 +257,37 @@ const MARS_DATA = {
       surfaceGround: "Extremely steep 17° slope with loose rolling boulders. Do not attempt on foot without safety ropes.",
       photoLocal: "images/gediz_vallis.jpg",
       photoCaption: "HiRISE orbital photo of the deep boulder channel of Gediz Vallis.",
-      streetViewAvailable: true
+      streetViewAvailable: true,
+      historicalDossier: {
+        priority1: {
+          tag: "P1 · CATACLYSMIC FLOOD",
+          title: "Late-Stage Torrential Debris Floods from High Mount Sharp",
+          keyDiscovery: "Carved by violent, late-stage water and boulder mudflows tumbling down from the high summit of Aeolis Mons, proving liquid water flowed much later in Martian history than previously believed.",
+          habitability: "Low habitability during flash floods; high scientific value for summit rock stratigraphy transported down.",
+          scienceValue: "Delivers geological samples from high mountain peaks unreachable by rovers or suited astronauts."
+        },
+        priority2: {
+          tag: "P2 · MISSION ARCHIVE",
+          solDiscovered: "Sol 3900 - Sol 4200 (Late 2023 - 2024)",
+          instrument: "Curiosity ChemCam Long-Distance RMI & APXS Spectrometer",
+          historicalArchive: "Curiosity navigated across the boulder ridge of Gediz Vallis, identifying car-sized boulders originating kilometers higher up Mount Sharp."
+        },
+        priority3: {
+          tag: "P3 · MINERALOGY",
+          minerals: [
+            { name: "Coarse Boulder Conglomerate", pct: "50%" },
+            { name: "Anhydrite & Bassanite", pct: "30%" },
+            { name: "Pyroxene & Olivine", pct: "20%" }
+          ],
+          spectroscopy: "Unweathered igneous minerals mixed with episodic sulfate cements."
+        },
+        priority4: {
+          tag: "P4 · SUIT PROTOCOL",
+          hazardLevel: "SEVERE HAZARD (17.2° Slope - Strict NO-GO On Foot)",
+          suitPunctureRisk: "High; loose unstable rolling boulders and scree",
+          protocolRules: "NASA Flight Rule NO-GO for unroped human foot traverse. Pressurized rover (SEV) or autonomous drone scout required."
+        }
+      }
     }
   ],
 

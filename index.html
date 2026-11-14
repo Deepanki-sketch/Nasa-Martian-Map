@@ -117,6 +117,13 @@
         </span>
       </label>
       <label class="basemap-radio-row">
+        <input type="radio" name="basemap-choice" value="marstrek_mola">
+        <span class="basemap-label">
+          <strong>NASA Mars Trek Global HD</strong>
+          <small>JPL multi-mission color shaded altimetry</small>
+        </span>
+      </label>
+      <label class="basemap-radio-row">
         <input type="radio" name="basemap-choice" value="topo_mola">
         <span class="basemap-label">
           <strong>Elevation Colors (MOLA)</strong>
@@ -241,6 +248,98 @@
         <div id="sheet-wp-line2" class="wp-line"><strong>Walking terrain:</strong> Sharp rocky ridges. Step carefully to protect spacesuit.</div>
       </div>
 
+      <!-- Prioritized Scientific & Historical Mission Dossier -->
+      <div class="sheet-section-title">MISSION DOSSIER & HISTORICAL ARCHIVE (PRIORITIZED)</div>
+      <div id="dossier-accordion" class="dossier-accordion">
+        <!-- Priority 1: Vital Scientific Discoveries & Habitability -->
+        <div class="dossier-item priority-1 active" id="dossier-p1">
+          <div class="dossier-header" data-target="p1-body">
+            <span class="dossier-badge badge-p1">PRIORITY 1 · CRITICAL</span>
+            <span class="dossier-title">Key Scientific Discoveries & Habitability</span>
+            <span class="dossier-chevron">▼</span>
+          </div>
+          <div class="dossier-body" id="p1-body">
+            <div class="dossier-key-title" id="dossier-p1-title">Proof of Ancient Habitable Environment</div>
+            <div class="dossier-row">
+              <span class="dossier-label">Core Finding:</span>
+              <span class="dossier-val" id="dossier-p1-finding">Warm groundwater veins carrying dissolved minerals seeped through deep bedrock fractures.</span>
+            </div>
+            <div class="dossier-row">
+              <span class="dossier-label">Habitability Status:</span>
+              <span class="dossier-val" id="dossier-p1-habitability">Highest Priority on Mars. Preserved ancient neutral-pH water shielded from cosmic radiation.</span>
+            </div>
+            <div class="dossier-row">
+              <span class="dossier-label">Human Survival Value:</span>
+              <span class="dossier-val" id="dossier-p1-value">Protected vein networks indicate potential sub-surface ice caches and mineral hydrates.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Priority 2: Mission History & Past Rover Archive -->
+        <div class="dossier-item priority-2" id="dossier-p2">
+          <div class="dossier-header" data-target="p2-body">
+            <span class="dossier-badge badge-p2">PRIORITY 2 · ARCHIVE</span>
+            <span class="dossier-title">Historical Rover Discoveries & Past Photos</span>
+            <span class="dossier-chevron">▶</span>
+          </div>
+          <div class="dossier-body" id="p2-body" style="display: none;">
+            <div class="dossier-row">
+              <span class="dossier-label">Rover Timeline:</span>
+              <span class="dossier-val" id="dossier-p2-sol">Curiosity MSL · Sol 4250 to 4320</span>
+            </div>
+            <div class="dossier-row">
+              <span class="dossier-label">NASA Instruments:</span>
+              <span class="dossier-val" id="dossier-p2-inst">Mastcam Stereo Camera, ChemCam Laser Spectrometer & HiRISE</span>
+            </div>
+            <div class="dossier-row">
+              <span class="dossier-label">Past History:</span>
+              <span class="dossier-val" id="dossier-p2-history">First in-situ ground photographs of polygonal boxwork ridges taken on the upper slopes of Mount Sharp.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Priority 3: Mineralogy & Spectroscopy -->
+        <div class="dossier-item priority-3" id="dossier-p3">
+          <div class="dossier-header" data-target="p3-body">
+            <span class="dossier-badge badge-p3">PRIORITY 3 · GEOLOGY</span>
+            <span class="dossier-title">Mineral Composition & CRISM Spectroscopy</span>
+            <span class="dossier-chevron">▶</span>
+          </div>
+          <div class="dossier-body" id="p3-body" style="display: none;">
+            <div class="dossier-minerals-list" id="dossier-p3-minerals">
+              <!-- Populated via JS -->
+            </div>
+            <div class="dossier-row" style="margin-top: 6px;">
+              <span class="dossier-label">Spectral Signature:</span>
+              <span class="dossier-val" id="dossier-p3-spec">Hydrated silica and sulfate absorption bands at 1.9 μm and 2.4 μm.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Priority 4: Surface Terrain & EVA Suit Protocol -->
+        <div class="dossier-item priority-4" id="dossier-p4">
+          <div class="dossier-header" data-target="p4-body">
+            <span class="dossier-badge badge-p4">PRIORITY 4 · PROTOCOL</span>
+            <span class="dossier-title">Surface Hazard & Spacesuit Safety Protocol</span>
+            <span class="dossier-chevron">▶</span>
+          </div>
+          <div class="dossier-body" id="p4-body" style="display: none;">
+            <div class="dossier-row">
+              <span class="dossier-label">Hazard Level:</span>
+              <span class="dossier-val" id="dossier-p4-hazard">High (14.5° incline over razor-sharp mineral curbs)</span>
+            </div>
+            <div class="dossier-row">
+              <span class="dossier-label">Suit Puncture Risk:</span>
+              <span class="dossier-val" id="dossier-p4-risk">CRITICAL: Sharp mineral blades could slice through outer beta-cloth layer.</span>
+            </div>
+            <div class="dossier-row">
+              <span class="dossier-label">EVA Flight Rule:</span>
+              <span class="dossier-val" id="dossier-p4-protocol">Maintain 1-meter standoff from vertical fin blades. Never step over blade crests.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="sheet-section-title">ELEVATION PROFILE & CLIMB</div>
       <canvas id="sheet-elevation-canvas" class="sheet-elevation-canvas"></canvas>
     </div>
@@ -267,9 +366,122 @@
         <div class="sv-site-sub" id="sv-site-sub">Mars Street View · Gale Crater</div>
       </div>
 
-      <div class="streetview-compass-badge" id="sv-compass-badge">
-        <span class="compass-needle" id="sv-compass-needle"></span>
-        <span id="sv-compass-text">185° S</span>
+      <div class="streetview-top-actions">
+        <!-- 7D Real Experience Audio Toggle Button -->
+        <button id="btn-sv-audio" class="sv-top-action-btn" title="7D Experience: Toggle Real Martian Wind & Suit Breathing Audio">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <span id="sv-audio-label">7D Audio: OFF</span>
+          <span class="sv-audio-wave" id="sv-audio-wave"></span>
+        </button>
+
+        <!-- 3D Astronaut Avatar vs 1st Person Helmet Mode -->
+        <button id="btn-sv-mode" class="sv-top-action-btn" title="Toggle 3rd Person Suited Avatar / 1st Person Visor HUD">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="7" r="4"></circle>
+            <path d="M5.5 21v-2a6.5 6.5 0 0 1 13 0v2"></path>
+          </svg>
+          <span id="sv-mode-label">Mode: 3D Avatar</span>
+        </button>
+
+        <div class="streetview-compass-badge" id="sv-compass-badge">
+          <span class="compass-needle" id="sv-compass-needle"></span>
+          <span id="sv-compass-text">185° S</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1st Person Astronaut Helmet Visor HUD Overlay -->
+    <div id="sv-visor-overlay" class="sv-visor-overlay" style="display: none;">
+      <div class="visor-glass-frame"></div>
+      
+      <!-- Top Left Suit Vitals -->
+      <div class="visor-hud-left">
+        <div class="visor-vital-item">
+          <span class="visor-vital-label">SUIT PRESSURE</span>
+          <span class="visor-vital-val" id="visor-pressure">29.6 kPa (100% O2)</span>
+        </div>
+        <div class="visor-vital-item">
+          <span class="visor-vital-label">O2 CONSUMPTION</span>
+          <span class="visor-vital-val" id="visor-o2-burn">0.82 L/min</span>
+        </div>
+        <div class="visor-vital-item">
+          <span class="visor-vital-label">SURFACE GRAVITY</span>
+          <span class="visor-vital-val">0.372 g (Mars Normal)</span>
+        </div>
+      </div>
+
+      <!-- Center Reticle & Crosshair -->
+      <div class="visor-reticle">
+        <div class="visor-crosshair"></div>
+        <div class="visor-pitch-ladder" id="visor-pitch-ladder">
+          <span class="ladder-mark mark-pos">+10°</span>
+          <span class="ladder-mark mark-zero">0° HORIZON</span>
+          <span class="ladder-mark mark-neg">-10°</span>
+        </div>
+        <div class="visor-bearing-text" id="visor-bearing-text">HEADING 185° S</div>
+      </div>
+
+      <!-- Top Right Astronaut Bio Vitals -->
+      <div class="visor-hud-right">
+        <div class="visor-vital-item">
+          <span class="visor-vital-label">ASTRONAUT HEART RATE</span>
+          <span class="visor-vital-val"><span class="pulse-dot"></span> <span id="visor-heart-rate">84 BPM</span></span>
+        </div>
+        <div class="visor-vital-item">
+          <span class="visor-vital-label">WALKBACK MARGIN</span>
+          <span class="visor-vital-val safe-green" id="visor-walkback-margin">+1h 24m SAFE</span>
+        </div>
+        <div class="visor-vital-item">
+          <span class="visor-vital-label">METABOLIC WORKLOAD</span>
+          <span class="visor-vital-val" id="visor-metabolic">295 kcal/hr</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3D Science Hotspot Notification Card -->
+    <div id="sv-hotspot-card" class="sv-hotspot-card">
+      <div class="hotspot-header">
+        <div class="hotspot-badge">IN-SITU FIELD SAMPLE DETECTED</div>
+        <button id="btn-close-hotspot" class="hotspot-close">✕</button>
+      </div>
+      <div class="hotspot-title" id="hotspot-title">Boxwork Hydrothermal Vein #04</div>
+      <div class="hotspot-desc" id="hotspot-desc">Silica-cemented vein blade standing 1.4m above regolith floor. Formed by ancient warm water seeping through fractures.</div>
+      <div class="hotspot-grid">
+        <div>Mineral: <strong id="hotspot-comp">64% Silica, 22% Sulfate</strong></div>
+        <div>Habitability: <strong class="color-safe" id="hotspot-hab">High (Ancient Water)</strong></div>
+      </div>
+      <button id="btn-collect-sample" class="hotspot-sample-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
+        Collect 50g Rock Core Drill Sample
+      </button>
+    </div>
+
+    <!-- Virtual Walking Game Controls (WASD / Touch D-Pad) -->
+    <div id="sv-walking-controls" class="sv-walking-controls">
+      <div class="dpad-container">
+        <button class="dpad-btn dpad-up" id="btn-walk-forward" title="Walk Forward (W / ↑)">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><polygon points="12 4 4 16 20 16 12 4"/></svg>
+        </button>
+        <div class="dpad-mid-row">
+          <button class="dpad-btn dpad-left" id="btn-walk-left" title="Step Left (A / ←)">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><polygon points="4 12 16 4 16 20 4 12"/></svg>
+          </button>
+          <button class="dpad-btn dpad-jump" id="btn-walk-jump" title="0.38g Low-Gravity Leap (SPACE)">
+            <span>LEAP</span>
+          </button>
+          <button class="dpad-btn dpad-right" id="btn-walk-right" title="Step Right (D / →)">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><polygon points="20 12 8 4 8 20 20 12"/></svg>
+          </button>
+        </div>
+        <button class="dpad-btn dpad-down" id="btn-walk-back" title="Walk Backward (S / ↓)">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><polygon points="12 20 4 8 20 8 12 20"/></svg>
+        </button>
+      </div>
+      <div class="walking-hint-badge">
+        <span class="key-pill">W</span><span class="key-pill">A</span><span class="key-pill">S</span><span class="key-pill">D</span> or Arrows to walk · <span class="key-pill">SPACE</span> to leap in 0.38g
       </div>
     </div>
 
@@ -343,6 +555,11 @@
             <span class="slider-label">Sun Elevation:</span>
             <input type="range" id="sv-sun-slider" min="-20" max="80" value="35" step="1">
             <span id="sv-slider-val" class="slider-val">35°</span>
+          </div>
+          <div class="sv-solar-slider-row">
+            <span class="slider-label">Dust Storm (τ):</span>
+            <input type="range" id="sv-dust-slider" min="0.4" max="3.5" value="0.6" step="0.1">
+            <span id="sv-dust-val" class="slider-val">τ 0.6 (Clear)</span>
           </div>
         </div>
       </div>

@@ -60,6 +60,23 @@ document.addEventListener('DOMContentLoaded', () => {
   let svPrevY = 0;
   let svIsDragging = false;
 
+  // 3D Astronaut Walkthrough & 7D Real Experience State
+  let astronautAvatarGroup = null;
+  let isHelmetVisorMode = false;
+  let astronautPos = { x: 0, y: -18, z: -35 };
+  let astronautBaseY = -18;
+  let astronautYVelocity = 0;
+  let isAstronautJumping = false;
+  let astronautStepCount = 0;
+  let scienceHotspotGroup = null;
+  let currentDustTau = 0.6;
+
+  // Web Audio API Martian Sound Synthesizer
+  let audioCtx = null;
+  let is7DAudioPlaying = false;
+  let windNoiseNode = null;
+  let breathingTimer = null;
+
   // -------------------------------------------------------------
   // 1. Initialize Map
   // -------------------------------------------------------------
@@ -120,6 +137,20 @@ document.addEventListener('DOMContentLoaded', () => {
         maxZoom: 14,
         maxNativeZoom: 6,
         opacity: 0.45
+      }).addTo(mapInstance);
+
+    } else if (type === 'marstrek_mola') {
+      // NASA JPL Solar System Treks (Mars Trek) Global HD Color Altimetry
+      activeBasemapLayer = L.tileLayer('https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg', {
+        maxZoom: 10,
+        minZoom: 0,
+        attribution: 'NASA JPL / Mars Trek'
+      }).addTo(mapInstance);
+
+      hillshadeLayer = L.tileLayer('https://s3.us-east-2.amazonaws.com/opmmarstiles/hillshade-tiles/{z}/{x}/{y}.png', {
+        maxZoom: 14,
+        maxNativeZoom: 6,
+        opacity: 0.35
       }).addTo(mapInstance);
 
     } else if (type === 'topo_mola') {
@@ -474,7 +505,83 @@ document.addEventListener('DOMContentLoaded', () => {
       caption.innerText = "No surface image acquired at this exact coordinate.";
     }
 
+    // Populate Prioritized Mission Dossier & Historical Archive
+    if (wp.historicalDossier) {
+      const d = wp.historicalDossier;
+      // Priority 1: Key Scientific Discoveries & Habitability
+      if (d.priority1) {
+        const p1Title = document.getElementById('dossier-p1-title');
+        const p1Finding = document.getElementById('dossier-p1-finding');
+        const p1Hab = document.getElementById('dossier-p1-habitability');
+        const p1Val = document.getElementById('dossier-p1-value');
+        if (p1Title) p1Title.innerText = d.priority1.title;
+        if (p1Finding) p1Finding.innerText = d.priority1.keyDiscovery;
+        if (p1Hab) p1Hab.innerText = d.priority1.habitability;
+        if (p1Val) p1Val.innerText = d.priority1.scienceValue;
+      }
+
+      // Priority 2: Mission History & Past Rover Archive
+      if (d.priority2) {
+        const p2Sol = document.getElementById('dossier-p2-sol');
+        const p2Inst = document.getElementById('dossier-p2-inst');
+        const p2Hist = document.getElementById('dossier-p2-history');
+        if (p2Sol) p2Sol.innerText = d.priority2.solDiscovered;
+        if (p2Inst) p2Inst.innerText = d.priority2.instrument;
+        if (p2Hist) p2Hist.innerText = d.priority2.historicalArchive;
+      }
+
+      // Priority 3: Mineralogy & Spectroscopy
+      if (d.priority3) {
+        const minList = document.getElementById('dossier-p3-minerals');
+        const p3Spec = document.getElementById('dossier-p3-spec');
+        if (minList) {
+          minList.innerHTML = '';
+          (d.priority3.minerals || []).forEach(m => {
+            const pill = document.createElement('span');
+            pill.className = 'dossier-mineral-pill';
+            pill.innerHTML = `<strong>${m.name}:</strong> ${m.pct}`;
+            minList.appendChild(pill);
+          });
+        }
+        if (p3Spec) p3Spec.innerText = d.priority3.spectroscopy;
+      }
+
+      // Priority 4: Surface Hazard & Spacesuit Safety Protocol
+      if (d.priority4) {
+        const p4Haz = document.getElementById('dossier-p4-hazard');
+        const p4Risk = document.getElementById('dossier-p4-risk');
+        const p4Prot = document.getElementById('dossier-p4-protocol');
+        if (p4Haz) p4Haz.innerText = d.priority4.hazardLevel;
+        if (p4Risk) p4Risk.innerText = d.priority4.suitPunctureRisk;
+        if (p4Prot) p4Prot.innerText = d.priority4.protocolRules;
+      }
+    }
+
     drawSheetElevationProfile();
+  }
+
+  function setupDossierAccordionListeners() {
+    const headers = document.querySelectorAll('.dossier-header');
+    headers.forEach(h => {
+      h.addEventListener('click', () => {
+        const item = h.parentElement;
+        const targetId = h.dataset.target;
+        const body = document.getElementById(targetId);
+        const chevron = h.querySelector('.dossier-chevron');
+        if (!body) return;
+
+        const isCurrentlyOpen = item.classList.contains('active');
+        if (isCurrentlyOpen) {
+          item.classList.remove('active');
+          body.style.display = 'none';
+          if (chevron) chevron.innerText = '▶';
+        } else {
+          item.classList.add('active');
+          body.style.display = 'flex';
+          if (chevron) chevron.innerText = '▼';
+        }
+      });
+    });
   }
 
   function drawSheetElevationProfile() {
@@ -647,6 +754,438 @@ document.addEventListener('DOMContentLoaded', () => {
   function closeMarsStreetView() {
     isStreetViewActive = false;
     document.getElementById('streetview-overlay').classList.remove('active');
+    stop7DAudio();
+    const hotspotCard = document.getElementById('sv-hotspot-card');
+    if (hotspotCard) hotspotCard.classList.remove('active');
+  }
+
+  // =========================================================================
+  // 3D SUITED ASTRONAUT AVATAR & PROCEDURAL RIGGING
+  // =========================================================================
+  function create3DAstronautAvatar() {
+    const astronaut = new THREE.Group();
+
+    // Materials (NASA Exploration Extravehicular Mobility Unit - xEMU)
+    const suitWhite = new THREE.MeshLambertMaterial({ color: 0xF4F6F8 });
+    const jointGray = new THREE.MeshLambertMaterial({ color: 0x374151 });
+    const goldVisorMat = new THREE.MeshPhysicalMaterial({
+      color: 0xF59E0B,
+      metalness: 0.95,
+      roughness: 0.08,
+      reflectivity: 0.98,
+      clearcoat: 1.0
+    });
+    const packMat = new THREE.MeshLambertMaterial({ color: 0xE2E8F0 });
+    const redAccent = new THREE.MeshBasicMaterial({ color: 0xEA4335 });
+    const cyanLight = new THREE.MeshBasicMaterial({ color: 0x00F0FF });
+
+    // 1. Helmet Dome
+    const helmetGeo = new THREE.SphereGeometry(3.2, 24, 20);
+    const helmet = new THREE.Mesh(helmetGeo, suitWhite);
+    helmet.position.y = 13.8;
+    astronaut.add(helmet);
+
+    // Reflective Gold Sun Visor
+    const visorGeo = new THREE.SphereGeometry(2.6, 20, 16, 0, Math.PI, 0, Math.PI * 0.75);
+    const visor = new THREE.Mesh(visorGeo, goldVisorMat);
+    visor.position.set(0, 13.8, 1.1);
+    visor.rotation.x = -Math.PI * 0.08;
+    astronaut.add(visor);
+
+    // Helmet Headlamp
+    const lightGeo = new THREE.BoxGeometry(1.2, 0.4, 0.4);
+    const lightMesh = new THREE.Mesh(lightGeo, cyanLight);
+    lightMesh.position.set(0, 16.6, 1.8);
+    astronaut.add(lightMesh);
+
+    // 2. Hard Upper Torso (HUT)
+    const torsoGeo = new THREE.BoxGeometry(5.6, 7.2, 3.8);
+    const torso = new THREE.Mesh(torsoGeo, suitWhite);
+    torso.position.y = 8.6;
+    astronaut.add(torso);
+
+    // Chest Display Unit (CDU)
+    const cduGeo = new THREE.BoxGeometry(2.6, 2.0, 0.5);
+    const cdu = new THREE.Mesh(cduGeo, cyanLight);
+    cdu.position.set(0, 9.6, 2.0);
+    astronaut.add(cdu);
+
+    // Red NASA Mission Stripe
+    const stripeGeo = new THREE.BoxGeometry(5.2, 0.35, 0.2);
+    const stripe = new THREE.Mesh(stripeGeo, redAccent);
+    stripe.position.set(0, 11.2, 1.95);
+    astronaut.add(stripe);
+
+    // 3. Primary Life Support System (PLSS Backpack)
+    const plssGeo = new THREE.BoxGeometry(5.0, 7.8, 2.6);
+    const plss = new THREE.Mesh(plssGeo, packMat);
+    plss.position.set(0, 9.0, -2.5);
+    astronaut.add(plss);
+
+    // PLSS Comms Antenna
+    const antGeo = new THREE.CylinderGeometry(0.08, 0.08, 3.8);
+    const ant = new THREE.Mesh(antGeo, jointGray);
+    ant.position.set(1.9, 14.8, -2.5);
+    astronaut.add(ant);
+
+    // 4. Arms & Gloves
+    const armGeo = new THREE.CylinderGeometry(1.0, 0.85, 6.0, 12);
+    const leftArm = new THREE.Mesh(armGeo, suitWhite);
+    leftArm.position.set(-3.7, 8.2, 0);
+    leftArm.rotation.z = Math.PI * 0.08;
+    astronaut.add(leftArm);
+
+    const rightArm = new THREE.Mesh(armGeo, suitWhite);
+    rightArm.position.set(3.7, 8.2, 0);
+    rightArm.rotation.z = -Math.PI * 0.08;
+    astronaut.add(rightArm);
+
+    // 5. Legs & Regolith Boots
+    const legGeo = new THREE.CylinderGeometry(1.15, 0.95, 6.8, 12);
+    const leftLeg = new THREE.Mesh(legGeo, suitWhite);
+    leftLeg.position.set(-1.6, 2.8, 0);
+    astronaut.add(leftLeg);
+
+    const rightLeg = new THREE.Mesh(legGeo, suitWhite);
+    rightLeg.position.set(1.6, 2.8, 0);
+    astronaut.add(rightLeg);
+
+    // Heavy Boots
+    const bootGeo = new THREE.BoxGeometry(2.3, 1.4, 3.4);
+    const leftBoot = new THREE.Mesh(bootGeo, jointGray);
+    leftBoot.position.set(-1.6, -0.6, 0.5);
+    astronaut.add(leftBoot);
+
+    const rightBoot = new THREE.Mesh(bootGeo, jointGray);
+    rightBoot.position.set(1.6, -0.6, 0.5);
+    astronaut.add(rightBoot);
+
+    astronaut.scale.set(0.85, 0.85, 0.85);
+    astronaut.position.set(astronautPos.x, astronautPos.y, astronautPos.z);
+    return astronaut;
+  }
+
+  // =========================================================================
+  // 3D INTERACTIVE SCIENCE HOTSPOTS (IN-SITU DISCOVERY BEACONS)
+  // =========================================================================
+  function createScienceHotspots(siteKey) {
+    const group = new THREE.Group();
+
+    // Floating diamond beacon
+    const geo = new THREE.OctahedronGeometry(4.5, 0);
+    const mat = new THREE.MeshBasicMaterial({ color: 0x00F0FF, wireframe: true });
+    const diamond = new THREE.Mesh(geo, mat);
+    diamond.position.set(45, -8, -95);
+    group.add(diamond);
+
+    // Glowing core
+    const coreGeo = new THREE.SphereGeometry(1.8, 14, 14);
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0x00F0FF });
+    const core = new THREE.Mesh(coreGeo, coreMat);
+    core.position.copy(diamond.position);
+    group.add(core);
+
+    // Target Ground Pulse Ring
+    const ringGeo = new THREE.RingGeometry(3, 9, 24);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x00F0FF,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.5
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(45, -24, -95);
+    group.add(ring);
+
+    // Contextual Data based on site
+    group.userData = {
+      title: siteKey === 'boxwork' ? "Boxwork Hydrothermal Vein #04" : "Layered Mudstone Shelf Alpha",
+      desc: siteKey === 'boxwork' 
+        ? "Silica-cemented vein blade standing 1.4m above regolith floor. Formed by ancient warm water seeping through fractures."
+        : "Fine-grained sedimentary mudstone deposited in ancient standing lake water.",
+      comp: siteKey === 'boxwork' ? "64% Silica, 22% Sulfate, 14% Carbonate" : "42% Smectite Clay, 31% Magnetite",
+      hab: "High Astrobiology Priority (Preserved Water)",
+      pos: { x: 45, y: -8, z: -95 }
+    };
+
+    return group;
+  }
+
+  // =========================================================================
+  // GAME-LIKE WALKING & 0.38G LEAP MECHANICS
+  // =========================================================================
+  function walkAstronaut(forward, strafe) {
+    if (!isStreetViewActive) return;
+    const rad = THREE.MathUtils.degToRad(svLon);
+    const stepSize = 2.4;
+
+    // Move forward/back along view heading and strafe left/right
+    const dx = (Math.sin(rad) * forward + Math.cos(rad) * strafe) * stepSize;
+    const dz = (Math.cos(rad) * forward - Math.sin(rad) * strafe) * stepSize;
+
+    astronautPos.x += dx;
+    astronautPos.z += dz;
+    astronautStepCount++;
+
+    // Low gravity Martian walking gait (gentle sine vertical bobbing)
+    if (!isAstronautJumping) {
+      astronautPos.y = astronautBaseY + Math.sin(astronautStepCount * 0.45) * 0.75;
+    }
+
+    playFootstepAudio();
+    checkHotspotProximity();
+  }
+
+  function jumpAstronaut() {
+    if (!isStreetViewActive || isAstronautJumping) return;
+    isAstronautJumping = true;
+    astronautYVelocity = 1.35; // Floaty 0.38g leap
+    playLeapAudio();
+  }
+
+  function toggleStreetViewMode() {
+    isHelmetVisorMode = !isHelmetVisorMode;
+    const visorEl = document.getElementById('sv-visor-overlay');
+    const modeLabel = document.getElementById('sv-mode-label');
+
+    if (isHelmetVisorMode) {
+      if (visorEl) visorEl.style.display = 'block';
+      if (modeLabel) modeLabel.innerText = 'Mode: 1st-Person Visor';
+      if (astronautAvatarGroup) astronautAvatarGroup.visible = false;
+    } else {
+      if (visorEl) visorEl.style.display = 'none';
+      if (modeLabel) modeLabel.innerText = 'Mode: 3D Avatar';
+      if (astronautAvatarGroup) astronautAvatarGroup.visible = true;
+    }
+  }
+
+  function updateVisorHUD() {
+    const heading = Math.round(((svLon % 360) + 360) % 360);
+    const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    const dirStr = dirs[Math.round(heading / 45) % 8];
+
+    const bearingEl = document.getElementById('visor-bearing-text');
+    if (bearingEl) bearingEl.innerText = `HEADING ${heading}° ${dirStr}`;
+
+    const pitchLadder = document.getElementById('visor-pitch-ladder');
+    if (pitchLadder) {
+      pitchLadder.style.transform = `translateY(${Math.round(svLat * 0.6)}px)`;
+    }
+
+    // Dynamic bio vitals pulse rate
+    const hrEl = document.getElementById('visor-heart-rate');
+    const metabolicEl = document.getElementById('visor-metabolic');
+    if (hrEl && metabolicEl) {
+      const baseHr = 82 + Math.round((astronautStepCount % 12) * 1.5);
+      hrEl.innerText = `${baseHr} BPM`;
+      metabolicEl.innerText = `${285 + Math.round((astronautStepCount % 12) * 12)} kcal/hr`;
+    }
+  }
+
+  function checkHotspotProximity() {
+    if (!scienceHotspotGroup || !scienceHotspotGroup.userData) return;
+    const hPos = scienceHotspotGroup.userData.pos;
+    const dist = Math.sqrt(
+      Math.pow(astronautPos.x - hPos.x, 2) + Math.pow(astronautPos.z - hPos.z, 2)
+    );
+
+    // If within 60 units, open the interactive science card!
+    const card = document.getElementById('sv-hotspot-card');
+    if (dist < 60) {
+      if (card && !card.classList.contains('active')) {
+        const u = scienceHotspotGroup.userData;
+        document.getElementById('hotspot-title').innerText = u.title;
+        document.getElementById('hotspot-desc').innerText = u.desc;
+        document.getElementById('hotspot-comp').innerText = u.comp;
+        document.getElementById('hotspot-hab').innerText = u.hab;
+        card.classList.add('active');
+      }
+    }
+  }
+
+  // =========================================================================
+  // 7D REAL EXPERIENCE MARTIAN AUDIO SYNTHESIZER (HTML5 Web Audio API)
+  // Guaranteed 100% offline & zero network dependency
+  // =========================================================================
+  function toggle7DAudio() {
+    if (is7DAudioPlaying) {
+      stop7DAudio();
+    } else {
+      start7DAudio();
+    }
+  }
+
+  function start7DAudio() {
+    try {
+      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      if (!audioCtx) audioCtx = new AudioCtxClass();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      // 1. Synthesize Atmospheric Martian Wind (Perseverance / SuperCam acoustic profile)
+      const bufferSize = audioCtx.sampleRate * 2;
+      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + white * 0.0555179;
+        b1 = 0.99332 * b1 + white * 0.0750759;
+        b2 = 0.96900 * b2 + white * 0.1538520;
+        b3 = 0.86650 * b3 + white * 0.3104856;
+        b4 = 0.55000 * b4 + white * 0.5329522;
+        b5 = -0.7616 * b5 - white * 0.0168980;
+        output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.09;
+        b6 = white * 0.115926;
+      }
+
+      windNoiseNode = audioCtx.createBufferSource();
+      windNoiseNode.buffer = noiseBuffer;
+      windNoiseNode.loop = true;
+
+      const windFilter = audioCtx.createBiquadFilter();
+      windFilter.type = 'lowpass';
+      windFilter.frequency.value = 260;
+
+      // LFO to modulate gusting wind cycles
+      const lfo = audioCtx.createOscillator();
+      lfo.frequency.value = 0.22;
+      const lfoGain = audioCtx.createGain();
+      lfoGain.gain.value = 130;
+      lfo.connect(lfoGain);
+      lfoGain.connect(windFilter.frequency);
+      lfo.start();
+
+      const windGain = audioCtx.createGain();
+      windGain.gain.value = 0.45;
+
+      windNoiseNode.connect(windFilter);
+      windFilter.connect(windGain);
+      windGain.connect(audioCtx.destination);
+      windNoiseNode.start();
+
+      // 2. Spacesuit Life-Support Oxygen Breathing Regulator
+      scheduleSuitBreathing();
+
+      is7DAudioPlaying = true;
+      updateAudioUI(true);
+    } catch (err) {
+      console.warn("7D Audio unavailable:", err);
+    }
+  }
+
+  function scheduleSuitBreathing() {
+    if (!audioCtx) return;
+    function breathCycle() {
+      if (!is7DAudioPlaying) return;
+      try {
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 820;
+        filter.Q.value = 2.8;
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(110, now);
+        osc.frequency.exponentialRampToValueAtTime(175, now + 1.2);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.06, now + 0.6);
+        gain.gain.linearRampToValueAtTime(0.001, now + 1.4);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 1.5);
+      } catch (e) {}
+
+      breathingTimer = setTimeout(breathCycle, 3800);
+    }
+    breathCycle();
+  }
+
+  function playFootstepAudio() {
+    if (!audioCtx || !is7DAudioPlaying) return;
+    try {
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(95, now);
+      osc.frequency.exponentialRampToValueAtTime(32, now + 0.1);
+      gain.gain.setValueAtTime(0.09, now);
+      gain.gain.linearRampToValueAtTime(0.001, now + 0.1);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.11);
+    } catch (e) {}
+  }
+
+  function playLeapAudio() {
+    if (!audioCtx || !is7DAudioPlaying) return;
+    try {
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(120, now);
+      osc.frequency.exponentialRampToValueAtTime(280, now + 0.25);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.linearRampToValueAtTime(0.001, now + 0.25);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.26);
+    } catch (e) {}
+  }
+
+  function stop7DAudio() {
+    is7DAudioPlaying = false;
+    if (breathingTimer) clearTimeout(breathingTimer);
+    if (windNoiseNode) {
+      try { windNoiseNode.stop(); } catch (e) {}
+      windNoiseNode = null;
+    }
+    updateAudioUI(false);
+  }
+
+  function updateAudioUI(isPlaying) {
+    const btn = document.getElementById('btn-sv-audio');
+    const label = document.getElementById('sv-audio-label');
+    if (!btn || !label) return;
+    if (isPlaying) {
+      btn.classList.add('playing', 'active');
+      label.innerText = '7D Audio: LIVE';
+    } else {
+      btn.classList.remove('playing', 'active');
+      label.innerText = '7D Audio: OFF';
+    }
+  }
+
+  function updateDustStormLighting(tau) {
+    currentDustTau = tau;
+    const dustValEl = document.getElementById('sv-dust-val');
+    if (dustValEl) {
+      let desc = 'Clear';
+      if (tau > 2.0) desc = 'Severe Dust Storm';
+      else if (tau > 1.2) desc = 'Dust Haze';
+      dustValEl.innerText = `τ ${tau.toFixed(1)} (${desc})`;
+    }
+
+    if (!streetViewDirLight || !streetViewAmbientLight) return;
+    // Optical depth attenuation: I = I_0 * exp(-tau)
+    const factor = Math.exp(- (tau - 0.6) * 0.5);
+    streetViewDirLight.intensity = Math.max(0.15, 1.2 * factor);
+    if (tau > 1.5) {
+      streetViewAmbientLight.color.setHex(0xa8562c); // Heavy red-orange dust scattering
+    } else {
+      streetViewAmbientLight.color.setHex(0x8a553c);
+    }
   }
 
   function initThreeStreetView(photoKey, sunElev = 35, sunAz = 245) {
@@ -725,6 +1264,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update Sun 3D Position & Light Angles
     updateSunPosition(sunElev, sunAz);
 
+    // 6. Build Interactive 3D Suited Astronaut Avatar
+    astronautPos = { x: 0, y: -18, z: -35 };
+    astronautBaseY = -18;
+    astronautYVelocity = 0;
+    isAstronautJumping = false;
+    astronautStepCount = 0;
+
+    astronautAvatarGroup = create3DAstronautAvatar();
+    streetViewScene.add(astronautAvatarGroup);
+
+    // 7. Build Interactive 3D Science Hotspot Beacon
+    scienceHotspotGroup = createScienceHotspots(photoKey);
+    streetViewScene.add(scienceHotspotGroup);
+
     svLon = 180;
     svLat = 0;
 
@@ -775,6 +1328,32 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!isStreetViewActive) return;
       requestAnimationFrame(renderSV);
 
+      // 0.38g Martian Low-Gravity Jump Physics
+      if (isAstronautJumping) {
+        astronautPos.y += astronautYVelocity;
+        astronautYVelocity -= 0.09; // 0.38g acceleration
+        if (astronautPos.y <= astronautBaseY) {
+          astronautPos.y = astronautBaseY;
+          isAstronautJumping = false;
+          astronautYVelocity = 0;
+          playFootstepAudio();
+        }
+      }
+
+      // Update 3D Astronaut Avatar
+      if (astronautAvatarGroup) {
+        astronautAvatarGroup.visible = !isHelmetVisorMode;
+        astronautAvatarGroup.position.set(astronautPos.x, astronautPos.y, astronautPos.z);
+        // Face along the camera azimuth
+        astronautAvatarGroup.rotation.y = THREE.MathUtils.degToRad(-svLon - 90);
+      }
+
+      // Animate 3D Science Hotspot Beacon
+      if (scienceHotspotGroup) {
+        scienceHotspotGroup.rotation.y += 0.025;
+        scienceHotspotGroup.position.y = -10 + Math.sin(Date.now() * 0.003) * 1.8;
+      }
+
       const phi = THREE.MathUtils.degToRad(90 - svLat);
       const theta = THREE.MathUtils.degToRad(svLon);
 
@@ -786,6 +1365,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (streetViewSunHalo) {
         streetViewSunHalo.lookAt(streetViewCamera.position);
       }
+
+      if (isHelmetVisorMode) {
+        updateVisorHUD();
+      }
+
       streetViewRenderer.render(streetViewScene, streetViewCamera);
     }
     renderSV();
@@ -1313,6 +1897,86 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSunPosition(elev, currentSunAzimuth);
       });
     }
+
+    // Dust Storm (Tau) Slider
+    const dustSlider = document.getElementById('sv-dust-slider');
+    if (dustSlider) {
+      dustSlider.addEventListener('input', (e) => {
+        const tau = parseFloat(e.target.value);
+        updateDustStormLighting(tau);
+      });
+    }
+
+    // 7D Real Experience Audio Toggle
+    const btnAudio = document.getElementById('btn-sv-audio');
+    if (btnAudio) {
+      btnAudio.addEventListener('click', toggle7DAudio);
+    }
+
+    // 3D Avatar vs 1st-Person Helmet Visor Toggle
+    const btnMode = document.getElementById('btn-sv-mode');
+    if (btnMode) {
+      btnMode.addEventListener('click', toggleStreetViewMode);
+    }
+
+    // Virtual Game D-Pad Walking Controls
+    const btnFwd = document.getElementById('btn-walk-forward');
+    const btnBack = document.getElementById('btn-walk-back');
+    const btnLeft = document.getElementById('btn-walk-left');
+    const btnRight = document.getElementById('btn-walk-right');
+    const btnJump = document.getElementById('btn-walk-jump');
+
+    if (btnFwd) btnFwd.addEventListener('click', () => walkAstronaut(1, 0));
+    if (btnBack) btnBack.addEventListener('click', () => walkAstronaut(-1, 0));
+    if (btnLeft) btnLeft.addEventListener('click', () => walkAstronaut(0, -1));
+    if (btnRight) btnRight.addEventListener('click', () => walkAstronaut(0, 1));
+    if (btnJump) btnJump.addEventListener('click', jumpAstronaut);
+
+    // Keyboard Walking Controls (W, A, S, D, Arrow Keys, Space)
+    window.addEventListener('keydown', (e) => {
+      if (!isStreetViewActive) return;
+      const key = e.key.toLowerCase();
+      if (key === 'w' || key === 'arrowup') {
+        walkAstronaut(1, 0);
+        e.preventDefault();
+      } else if (key === 's' || key === 'arrowdown') {
+        walkAstronaut(-1, 0);
+        e.preventDefault();
+      } else if (key === 'a' || key === 'arrowleft') {
+        walkAstronaut(0, -1);
+        e.preventDefault();
+      } else if (key === 'd' || key === 'arrowright') {
+        walkAstronaut(0, 1);
+        e.preventDefault();
+      } else if (key === ' ') {
+        jumpAstronaut();
+        e.preventDefault();
+      }
+    });
+
+    // 3D Science Hotspot Notification Card Actions
+    const btnCloseHotspot = document.getElementById('btn-close-hotspot');
+    if (btnCloseHotspot) {
+      btnCloseHotspot.addEventListener('click', () => {
+        document.getElementById('sv-hotspot-card').classList.remove('active');
+      });
+    }
+
+    const btnSample = document.getElementById('btn-collect-sample');
+    if (btnSample) {
+      btnSample.addEventListener('click', () => {
+        btnSample.innerHTML = '✔ Sample Extracted & Stored in Rover Vault!';
+        btnSample.style.background = '#10B981';
+        setTimeout(() => {
+          document.getElementById('sv-hotspot-card').classList.remove('active');
+          btnSample.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg> Collect 50g Rock Core Drill Sample';
+          btnSample.style.background = '#1E8E3E';
+        }, 1800);
+      });
+    }
+
+    // Initialize Prioritized Mission Dossier Accordion
+    setupDossierAccordionListeners();
 
     // 3D Mars Globe Click -> Open Orbit Modal
     document.getElementById('mars-3d-widget').addEventListener('click', () => {
