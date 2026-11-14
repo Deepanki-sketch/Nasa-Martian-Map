@@ -1,760 +1,3074 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Mars Maps // Gale Crater Expedition</title>
-  
-  <!-- Leaflet GIS Engine -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  
-  <!-- Three.js for 360° Mars Street View & 3D Globe -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mars Safe Walk | Team Kasukabe Defence Group</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --paper:#EFE9DD;--card:#FBF8F2;--ink:#241A10;--ink2:#6A5D4E;--line:#DDD3C2;
+  --rust:#B0461C;--moss:#3B6A4E;--ochre:#C3841A;--oxblood:#7C1D27;--slate:#2C5870;--warn:#8A5A0B;
+  --hud-bg:rgba(24,20,18,0.84);--hud-line:rgba(255,235,210,0.18);--hud-text:#F5EFE6;--hud-muted:#C5B49E;
+  --accent-orange:#E07020;--accent-blue:#3B82F6;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font:400 14px/1.45 "IBM Plex Sans",system-ui,sans-serif;overflow:hidden}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:800;margin:0;letter-spacing:-.01em;line-height:1.15}
+h3{font-size:17px;margin:4px 0 8px}
+p{margin:0 0 8px}
+.lbl{font:500 11px/1.2 "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin:0 0 4px}
+.mono{font-family:"IBM Plex Mono",monospace}
+.muted{color:var(--ink2);font-size:12.5px}
+.btn{background:var(--card);border:1px solid var(--ink);padding:6px 10px;border-radius:3px;font-weight:600;font-size:12.5px;transition:background .15s,color .15s}
+.btn:hover{background:var(--ink);color:var(--paper)}
+.btn.primary{background:var(--rust);border-color:var(--rust);color:#fff}
+.btn.primary:hover{background:var(--ink);border-color:var(--ink)}
+.btn.on{background:var(--ink);color:var(--paper)}
+.btn.sm{padding:3px 7px;font-size:11.5px}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.input{width:100%;padding:6px 9px;border:1px solid var(--ink);background:var(--card);border-radius:3px}
+.list{list-style:none;padding:0;margin:6px 0;max-height:210px;overflow:auto}
+.list li{display:flex;justify-content:space-between;align-items:center;gap:4px;padding:3px 0;border-bottom:1px solid var(--line)}
+.item{flex:1;display:flex;justify-content:space-between;align-items:center;gap:6px;background:none;border:0;padding:5px 4px;text-align:left}
+.item:hover,.item.on{background:var(--paper)}
+.item.on{box-shadow:inset 3px 0 0 var(--rust)}
+.check{display:flex;gap:6px;align-items:center;margin:6px 0;font-size:12.5px}
+.checklist{list-style:none;padding:0;margin:0}
+.checklist li{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:5px 0;font-size:12.5px}
+.tag{font:600 10px/1 "IBM Plex Mono",monospace;padding:3px 6px;border:1px solid var(--ink2);color:var(--ink2);white-space:nowrap;align-self:flex-start;text-transform:uppercase}
+.tag.Done{background:var(--moss);border-color:var(--moss);color:#fff}
+.tag.Partly{background:var(--ochre);border-color:var(--ochre);color:var(--ink)}
+.note{font-size:11.5px;color:var(--ink2);margin-top:10px}
+.c-safe{color:var(--moss);font-weight:600}
+.c-caution{color:var(--warn);font-weight:600}
+.c-stop{color:var(--oxblood);font-weight:600}
 
-  <link rel="stylesheet" href="styles.css">
+/* App Layout */
+#app{height:100vh;display:grid;grid-template-columns:300px minmax(0,1fr) 240px;grid-template-rows:49px minmax(0,1fr) auto}
+.top{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:6px 14px;background:var(--card);border-bottom:2px solid var(--ink);z-index:40;height:49px}
+.brand{margin-right:auto;display:flex;flex-direction:column}
+.brand strong{font:800 18px/1.1 Fraunces,Georgia,serif}
+.modes,.pills{display:flex;gap:6px;align-items:center}
+.pill{border:1px solid var(--ink);padding:4px 8px;font-size:12px;background:var(--paper)}
+.left{grid-column:1;grid-row:2;overflow-y:auto;padding:4px 12px 14px;background:var(--card);border-right:1px solid var(--line);min-height:0}
+.center{grid-column:2;grid-row:2;position:relative;min-height:0;overflow:hidden}
+.right{grid-column:3;grid-row:2;overflow-y:auto;padding:4px 12px 14px;background:var(--card);border-left:1px solid var(--line);min-height:0}
+.left section,.right section{border-bottom:1px solid var(--line);padding:10px 0}
+#mapView{position:absolute;inset:0}
+#map{width:100%;height:100%;background:var(--paper)}
+.stopdot{width:24px;height:24px;border-radius:50%;background:var(--rust);color:#fff;border:2px solid #fff;font:600 12px "IBM Plex Mono",monospace;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+
+/* ================= 3D STREET VIEW (Fixed Full Viewport Below Header) ================= */
+#walkView{
+  position:fixed;
+  top:49px;left:0;right:0;bottom:0;
+  width:100vw;
+  height:calc(100vh - 49px);
+  z-index:35;
+  background:#2A1810;
+  user-select:none;
+  overflow:hidden;
+}
+#three{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
+#three:active{cursor:grabbing}
+#pinsOverlay{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+.pin3d{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;display:flex;flex-direction:column;align-items:center;transition:transform .12s}
+.pin3d:hover{transform:translate(-50%,-105%) scale(1.06)}
+.pin-card{background:rgba(22,20,24,0.88);backdrop-filter:blur(8px);color:#fff;padding:6px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);text-align:center;box-shadow:0 6px 18px rgba(0,0,0,0.45);white-space:nowrap}
+.pin-card strong{display:block;font:600 13px/1.2 "IBM Plex Sans",sans-serif;color:#fff}
+.pin-card span{display:block;font:400 11px/1.2 "IBM Plex Mono",monospace;color:#CBD5E1;margin-top:2px}
+.pin-drop{width:24px;height:30px;margin-top:4px;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.5))}
+
+/* Top Walk Bar */
+.w-top-back{position:absolute;left:16px;top:14px;z-index:10;width:38px;height:38px;border-radius:50%;background:var(--hud-bg);backdrop-filter:blur(10px);border:1px solid var(--hud-line);color:var(--hud-text);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.w-top-back:hover{background:#000}
+.w-top-title{position:absolute;left:70px;top:12px;z-index:10;background:var(--hud-bg);backdrop-filter:blur(10px);border:1px solid var(--hud-line);border-radius:999px;padding:6px 20px;text-align:center;color:var(--hud-text);box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.w-top-title strong{display:block;font:600 13.5px/1.2 "IBM Plex Sans",sans-serif;color:#fff}
+.w-top-title span{display:block;font:400 11px/1.2 "IBM Plex Sans",sans-serif;color:var(--hud-muted);margin-top:2px}
+.w-top-pills{position:absolute;right:16px;top:14px;z-index:10;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.w-pill{background:var(--hud-bg);backdrop-filter:blur(10px);border:1px solid var(--hud-line);color:var(--hud-text);padding:7px 13px;border-radius:999px;font:600 12px/1 "IBM Plex Sans",sans-serif;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.w-pill.active{background:rgba(72,95,168,0.88);border-color:rgba(147,197,253,0.45);color:#fff}
+.w-pill .dot{width:8px;height:8px;border-radius:50%;background:#EF4444;display:inline-block}
+.w-pill .dot.ok{background:#22C55E}
+
+/* Right Side Route & Elevation Cards */
+.w-right-stack{position:absolute;right:16px;top:62px;z-index:10;width:210px;display:flex;flex-direction:column;gap:10px}
+.w-card{background:var(--hud-bg);backdrop-filter:blur(10px);border:1px solid var(--hud-line);border-radius:12px;padding:10px;color:var(--hud-text);box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.w-card-head{display:flex;justify-content:space-between;align-items:center;font:600 10px/1 "IBM Plex Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--hud-muted);margin-bottom:6px}
+#mini{width:100%;height:150px;display:block;border-radius:8px;cursor:pointer;background:rgba(15,14,18,0.7)}
+#wElevCanvas{width:100%;height:74px;display:block;border-radius:6px;cursor:ew-resize;background:rgba(15,14,18,0.5)}
+
+/* Left Side D-Pad */
+.w-dpad{position:absolute;left:22px;bottom:140px;z-index:10;width:112px;height:112px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:4px}
+.dpad-btn{background:var(--hud-bg);backdrop-filter:blur(8px);border:1px solid var(--hud-line);border-radius:8px;color:#fff;display:flex;align-items:center;justify-content:center;font:700 10px "IBM Plex Mono",monospace;box-shadow:0 4px 12px rgba(0,0,0,.4);user-select:none}
+.dpad-btn:hover,.dpad-btn:active{background:rgba(224,112,32,0.88);border-color:#fff}
+.dpad-leap{color:#38BDF8;letter-spacing:.04em}
+
+/* Bottom Center Stack */
+.w-bottom-stack{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:10;width:min(690px,calc(100vw - 290px));display:flex;flex-direction:column;align-items:center;gap:7px;pointer-events:none}
+.w-bottom-stack > *{pointer-events:auto}
+.w-telemetry{width:100%;background:var(--hud-bg);backdrop-filter:blur(12px);border:1px solid var(--hud-line);border-radius:14px;padding:9px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;box-shadow:0 10px 28px rgba(0,0,0,.5)}
+.w-tcol{text-align:center;border-right:1px solid rgba(255,255,255,0.1);padding-right:8px}
+.w-tcol:last-child{border-right:0;padding-right:0}
+.w-tcol .t-lbl{font:600 10px/1.1 "IBM Plex Mono",monospace;letter-spacing:.06em;color:var(--hud-muted);text-transform:uppercase}
+.w-tcol .t-val{font:700 15.5px/1.25 "IBM Plex Sans",sans-serif;color:#fff;margin:2px 0}
+.w-tcol .t-sub{font:400 11px/1.2 "IBM Plex Sans",sans-serif;color:var(--hud-muted)}
+
+.w-sun-card{width:100%;background:var(--hud-bg);backdrop-filter:blur(12px);border:1px solid var(--hud-line);border-radius:14px;padding:9px 16px;color:var(--hud-text);box-shadow:0 10px 28px rgba(0,0,0,.5)}
+.w-sun-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;font-size:11.5px}
+.w-sun-title{font:700 11px "IBM Plex Mono",monospace;color:#FBBF24;letter-spacing:.05em;text-transform:uppercase}
+.w-sun-metrics{font:500 11.5px "IBM Plex Mono",monospace;color:var(--hud-muted)}
+.w-sun-metrics b{color:#fff}
+.w-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.w-preset{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);color:var(--hud-text);padding:4px 10px;border-radius:6px;font:500 11.5px "IBM Plex Sans",sans-serif}
+.w-preset.on,.w-preset:hover{background:var(--accent-orange);border-color:var(--accent-orange);color:#fff;font-weight:600}
+.w-slider-row{display:grid;grid-template-columns:108px 1fr 86px;align-items:center;gap:10px;font-size:11.5px;margin:3px 0}
+.w-slider-row span{color:var(--hud-muted)}
+.w-slider-row b{font:600 11.5px "IBM Plex Mono",monospace;color:#FBBF24;text-align:right}
+.w-slider-row input[type=range]{width:100%;accent-color:var(--accent-orange);cursor:pointer;height:5px}
+
+.w-tabs{display:flex;gap:6px;background:var(--hud-bg);backdrop-filter:blur(10px);padding:3px;border-radius:999px;border:1px solid var(--hud-line)}
+.w-tab{background:transparent;border:0;color:var(--hud-muted);padding:5px 14px;border-radius:999px;font:600 11.5px "IBM Plex Sans",sans-serif}
+.w-tab.on{background:rgba(255,255,255,0.16);color:#fff}
+.w-chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.w-chip{background:var(--hud-bg);backdrop-filter:blur(10px);border:1px solid var(--hud-line);color:var(--hud-text);padding:5px 14px;border-radius:999px;font:600 12px "IBM Plex Sans",sans-serif}
+.w-chip.on{background:var(--accent-blue);border-color:#93C5FD;color:#fff}
+.w-chip:hover{border-color:#fff}
+.w-foot-hint{font:400 11.5px "IBM Plex Mono",monospace;color:rgba(255,245,235,0.8);text-shadow:0 1px 4px rgba(0,0,0,.85)}
+.alarm{background:var(--oxblood);color:#fff;padding:6px 14px;border-radius:8px;font-weight:600;font-size:12.5px;border:1px solid #FCA5A5;animation:blink 1.2s steps(2,start) infinite}
+@keyframes blink{to{opacity:.35}}
+
+/* Bottom Sheet (Map Mode) */
+.sheet{grid-column:1/-1;grid-row:3;background:var(--card);border-top:2px solid var(--ink)}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;padding:5px 14px;border-bottom:1px solid var(--line)}
+.sheet-body{display:flex;gap:12px;padding:8px 14px;height:185px}
+.sheet.collapsed .sheet-body{display:none}
+.verdict{flex:0 0 240px;padding:8px 10px;background:var(--paper);border:1px solid var(--ink);overflow:auto}
+.verdict ul{margin:4px 0 0;padding-left:16px;font-size:12px}
+.verdict.safe{background:var(--moss);color:#fff;border-color:var(--moss)}
+.verdict.caution{background:var(--ochre);color:var(--ink);border-color:var(--ochre)}
+.verdict.stop{background:var(--oxblood);color:#fff;border-color:var(--oxblood)}
+.stats{flex:0 0 215px;display:grid;grid-template-columns:1fr 1fr;gap:6px;align-content:start}
+.stat{border:1px solid var(--line);padding:6px 8px;background:var(--paper)}
+.stat b{display:block;font:600 14px "IBM Plex Mono",monospace;margin-top:2px}
+.card{flex:1 1 0;min-width:0;overflow:auto;border:1px solid var(--line);padding:8px 10px;background:var(--paper)}
+dl{margin:6px 0;display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:12px}
+dt{color:var(--ink2);font-size:11px}
+dd{margin:0;font-weight:600}
+#profile{flex:1.3 1 0;min-width:0;height:100%;border:1px solid var(--line);background:var(--card);cursor:crosshair}
+
+/* Modal, Intro, Notice */
+.modal{position:fixed;inset:0;z-index:55;background:rgba(36,26,16,.62);display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:var(--card);max-width:580px;padding:24px;border:2px solid var(--ink);max-height:100%;overflow:auto}
+.modal-box h2{font-size:28px;margin:6px 0 10px}
+.steps{padding-left:20px;margin:10px 0}
+.steps li{margin-bottom:6px}
+.rules{background:var(--paper);border-left:4px solid var(--rust);padding:10px 12px;margin:10px 0;font-size:13px}
+.notice{position:fixed;left:50%;top:60px;transform:translateX(-50%);z-index:70;background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:6px;font-size:13px;max-width:80vw;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+#intro{position:fixed;inset:0;z-index:60;background:#120D08;color:#F3EADB;display:flex;align-items:center;justify-content:center}
+.intro-inner{display:flex;gap:40px;align-items:center;max-width:960px;padding:24px}
+#introCanvas{width:280px;height:280px;flex:0 0 280px}
+.intro-text{max-width:390px}
+.intro-text h1{font-size:46px;line-height:1;margin:6px 0 10px}
+.intro-text .sub{color:#CDBBA0}
+.intro-text .lbl{color:#CDBBA0}
+.loadlist{list-style:none;padding:0;margin:14px 0 10px;font:13px/1.4 "IBM Plex Mono",monospace;min-height:88px}
+.loadlist li{display:flex;justify-content:space-between;border-bottom:1px solid #3a2e22;padding:4px 0}
+.dim{color:#CDBBA0}
+.bar{height:6px;background:#3a2e22}
+#barFill{height:100%;width:0;background:var(--rust);transition:width 1.8s linear}
+.ghost{background:none;border:1px solid #F3EADB;color:#F3EADB;padding:8px 14px;margin-top:14px}
+.ghost:hover{background:#F3EADB;color:#120D08}
+
+@media (max-width:1050px){
+  .w-bottom-stack{width:calc(100vw - 24px)}
+  .w-dpad{bottom:265px;left:12px}
+}
+
+/* ================= 3D MOUNT SHARP ORBIT VIEW ================= */
+#orbitView{
+  position:fixed;
+  top:49px;left:0;right:0;bottom:0;
+  width:100vw;
+  height:calc(100vh - 49px);
+  z-index:35;
+  background:#140E0B;
+  user-select:none;
+  overflow:hidden;
+}
+#orbitThree{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
+#orbitThree:active{cursor:grabbing}
+#orbitPinsOverlay{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+.steep-alarm{background:#7C1D27 !important;color:#fff !important;border:1px solid #FCA5A5 !important;animation:blink 0.75s steps(2,start) infinite !important}
+</style>
 </head>
-<body class="theme-gmaps">
+<script>
+(function() {
+  var st = document.createElement('style');
+  st.textContent = ""
+    + "#walkView{ z-index:5000 !important; }"
+    + "#orbitView{ z-index:5000 !important; }"
+    + ".leaflet-pane,.leaflet-top,.leaflet-bottom,.leaflet-control-container{ z-index:1 !important; }"
+    + "#mapView.pip-mode{ position:fixed !important; left:50% !important; top:60px !important; transform:translateX(-50%) !important;"
+    + " width:min(720px,90vw) !important; height:420px !important; z-index:6000 !important;"
+    + " border:2px solid #241A10 !important; box-shadow:0 20px 60px rgba(0,0,0,.5) !important; display:block !important; visibility:visible !important; }";
+  document.head.appendChild(st);
 
-  <!-- Full-Bleed Map Canvas -->
-  <div id="fullbleed-map"></div>
+  function is3DActive(){
+    var w = document.getElementById('walkView');
+    var o = document.getElementById('orbitView');
+    return (w && !w.hidden) || (o && !o.hidden);
+  }
+  function fixBigMap(){
+    var mv = document.getElementById('mapView');
+    if(!mv) return;
+    if(is3DActive() && !mv.classList.contains('pip-mode')){
+      mv.style.display = 'none';
+    } else if(!is3DActive()){
+      mv.classList.remove('pip-mode');
+      mv.style.display = '';
+      var b = document.getElementById('btnMapPip');
+      if(b){ b.textContent = '2D Map: OFF'; b.classList.remove('active'); }
+      try{ if(typeof map !== 'undefined' && map) setTimeout(function(){ map.invalidateSize(); },120); }catch(e){}
+    }
+  }
 
-  <!-- Interactive 3D Mars Mini-Globe (Top Left) -->
-  <div id="mars-3d-widget" class="mars-3d-widget" title="3D Mars Globe · Drag to spin, tap to explore">
-    <div id="mars-3d-canvas-container" class="mars-3d-canvas-container"></div>
-    <div class="mars-3d-badge">
-      <span class="live-dot"></span>
-      <span class="badge-text">3D GLOBE</span>
+  // auto-fix whenever walkView or orbitView shows / hides
+  var walkEl = document.getElementById('walkView');
+  if(walkEl && window.MutationObserver){
+    new MutationObserver(function(){ setTimeout(fixBigMap, 30); })
+      .observe(walkEl, { attributes:true, attributeFilter:['hidden'] });
+  }
+  var orbitEl = document.getElementById('orbitView');
+  if(orbitEl && window.MutationObserver){
+    new MutationObserver(function(){ setTimeout(fixBigMap, 30); })
+      .observe(orbitEl, { attributes:true, attributeFilter:['hidden'] });
+  }
+  document.querySelectorAll('[data-mode]').forEach(function(b){
+    b.addEventListener('click', function(){ setTimeout(fixBigMap, 100); });
+  });
+  var back = document.getElementById('backMap');
+  if(back) back.addEventListener('click', function(){ setTimeout(fixBigMap, 100); });
+  var backOrb = document.getElementById('backFromOrbit');
+  if(backOrb) backOrb.addEventListener('click', function(){ setTimeout(fixBigMap, 100); });
+
+  // add 2D Map ON/OFF toggle to Walk HUD
+  var pills = document.querySelector('.w-top-pills');
+  if(pills && !document.getElementById('btnMapPip')){
+    var btn = document.createElement('button');
+    btn.id = 'btnMapPip';
+    btn.className = 'w-pill';
+    btn.textContent = '2D Map: OFF';
+    btn.onclick = function(){
+      var mv = document.getElementById('mapView');
+      if(!mv) return;
+      var on = mv.classList.toggle('pip-mode');
+      if(on){
+        mv.style.display = 'block';
+        btn.textContent = '2D Map: ON (click again to hide)';
+        btn.classList.add('active');
+        try{ if(typeof map !== 'undefined' && map) setTimeout(function(){ map.invalidateSize(); },150); }catch(e){}
+      } else {
+        btn.textContent = '2D Map: OFF';
+        btn.classList.remove('active');
+        fixBigMap();
+      }
+    };
+    pills.insertBefore(btn, pills.firstChild);
+  }
+
+  setTimeout(fixBigMap, 700);
+})();
+</script>
+<body>
+
+<div id="intro">
+  <div class="intro-inner">
+    <canvas id="introCanvas" width="560" height="560"></canvas>
+    <div class="intro-text">
+      <p class="lbl">Team Kasukabe Defence Group</p>
+      <h1>Mars Safe Walk</h1>
+      <p class="sub">Plan and walk a traverse across Mount Sharp's boxwork ridges in Gale Crater. Inspect the terrain in 3D Street View and return to base with a 45-minute safety reserve.</p>
+      <ul id="loadList" class="loadlist"></ul>
+      <div class="bar"><div id="barFill"></div></div>
+      <button id="skipIntro" class="ghost">Skip intro</button>
     </div>
   </div>
+</div>
 
-  <!-- TOP: Google Maps Directions Bar -->
-  <div class="top-nav-container">
-    <div class="gmaps-directions-card" id="directions-card">
-      <div class="directions-route-column">
-        <!-- Start Point (Blue Dot) -->
-        <div class="route-point-row">
-          <span class="gmaps-bullet start-bullet"></span>
-          <span class="route-point-label" title="Base Camp">Your Location (Base Camp)</span>
-        </div>
-        
-        <div class="route-connector-line"></div>
+<div id="guide" class="modal" hidden>
+  <div class="modal-box">
+    <p class="lbl">Start here</p>
+    <h2>Welcome to Mars Safe Walk</h2>
+    <p>This app combines orbital maps with a 3D Martian Street View so an astronaut can plan a walk up Mount Sharp, inspect the boxwork mineral ridges, and return to Base Camp safely.</p>
+    <ol class="steps">
+      <li><b>3D Street View Navigation:</b> Click directly on the Martian ground (follow the white chevron on the surface) to glide forward like Google Street View, press <b>W / A / S / D</b> or the on-screen <b>D-Pad</b>, or click any floating landmark pin.</li>
+      <li><b>Live Sunlight &amp; Scrubbing:</b> Drag the <b>Elevation Scrubber</b> or click the <b>Route Map</b> to jump along the 40 km study area, and adjust the <b>Sunlight &amp; Dust Storm</b> sliders in real time.</li>
+      <li><b>2D Orbital Map Planner:</b> Switch to <b>Map Planner</b> in the top bar at any time to edit stops or inspect NASA MOLA &amp; THEMIS layers.</li>
+    </ol>
+    <div class="rules"><b>Challenge rules followed:</b> authentic Mount Sharp boxwork science target, three planetary data types (MOLA elevation, THEMIS thermal inertia, optical imagery), hazard-aware routing under 15 degrees, and a 45-minute emergency walkback air reserve.</div>
+    <div class="row" style="margin-top:14px">
+      <button id="guideWalkNow" class="btn primary">Start in 3D Street View</button>
+      <button id="guideOk" class="btn">Open 2D Map Planner</button>
+    </div>
+  </div>
+</div>
 
-        <!-- End Destination (Red Pin) -->
-        <div class="route-point-row destination-trigger" id="btn-open-destinations" title="Tap to change destination">
-          <span class="gmaps-bullet end-bullet"></span>
-          <span class="route-point-label dest-name" id="active-dest-label">Boxwork Ridge</span>
-          <span class="change-dest-pill">Change</span>
+<div id="app">
+  <header class="top">
+    <div class="brand">
+      <span class="lbl">Team Kasukabe Defence Group · ARES-OPS</span>
+      <strong>Mars Safe Walk</strong>
+    </div>
+    <nav class="modes">
+      <button class="btn" data-mode="map">Map Planner</button>
+      <button class="btn primary on" data-mode="walk">Walk in 3D (Street View)</button>
+      <button class="btn" data-mode="orbit">Mount Sharp 3D</button>
+      <button class="btn" id="howBtn">How this works</button>
+      <button class="btn" id="btnMarsTrekTop" title="Launch official NASA JPL Mars Trek Portal for Gale Crater" style="background:#2C5870;color:#fff;border-color:#2C5870">NASA Mars Trek ↗</button>
+    </nav>
+    <div class="pills">
+      <span class="pill" id="pillAir">Suit O2 left: 92%</span>
+      <span class="pill mono" id="pillCoord"></span>
+    </div>
+  </header>
+
+  <aside class="left">
+    <section>
+      <p class="lbl">Step 1 · Gale Crater Sites</p>
+      <h3>Pick a place to study</h3>
+      <input id="search" class="input" placeholder="Search places">
+      <ul id="places" class="list"></ul>
+    </section>
+    <section>
+      <p class="lbl">Step 2 · EVA Traverse</p>
+      <h3>Build the walk</h3>
+      <div class="row">
+        <button class="btn on" id="modeSafe">Safest path (&lt;15°)</button>
+        <button class="btn" id="modeStraight">Straight legs</button>
+      </div>
+      <label class="check"><input type="checkbox" id="addStops"> Click the map to add custom stops</label>
+      <ul id="stops" class="list"></ul>
+      <div class="row">
+        <button class="btn sm" id="resetDefaultRoute">Load Full Gale Route</button>
+        <button class="btn sm" id="clearRoute">Clear</button>
+        <button class="btn primary" id="walkRoute" style="width:100%;margin-top:4px">Walk this route in 3D</button>
+      </div>
+    </section>
+    <section>
+      <p class="lbl">Step 3 · NASA Rules</p>
+      <h3>Science checklist</h3>
+      <ul id="checklist" class="checklist"></ul>
+    </section>
+    <p class="note">Data note: Map tiles stream from NASA Mars Trek (MOLA, THEMIS, Viking/CTX). 3D elevation &amp; regolith ripples use a local Gale Crater digital elevation model with optional NASA Curiosity panorama sky dome.</p>
+  </aside>
+
+  <main class="center">
+    <div id="mapView"><div id="map"></div></div>
+  </main>
+
+  <aside class="right">
+    <section>
+      <p class="lbl">Orbital Map Layers</p>
+      <div class="row" style="flex-direction:column">
+        <button class="btn on" data-layer="relief">Shaded relief (MOLA height)</button>
+        <button class="btn" data-layer="heat">Thermal inertia (THEMIS IR)</button>
+        <button class="btn" data-layer="optic">Optical mosaic (Viking/CTX)</button>
+        <button class="btn" data-layer="plain">Plain chart background</button>
+      </div>
+    </section>
+    <section>
+      <p class="lbl">Sunlight (2D &amp; 3D)</p>
+      <input type="range" id="tod" min="0" max="24" step="0.25" value="15" style="width:100%">
+      <p id="todLabel" class="mono" style="font-size:12.5px">15:00, sun 35° up</p>
+      <div class="row" style="flex-direction:column">
+        <button class="btn sm" data-time="6">Dawn 06:00</button>
+        <button class="btn sm" data-time="11.5">Midday 11:30</button>
+        <button class="btn sm" data-time="15">Afternoon 15:00</button>
+        <button class="btn sm" data-time="18.25">Blue sunset 18:15</button>
+        <button class="btn sm" data-time="22">Night 22:00</button>
+      </div>
+    </section>
+    <section>
+      <p class="lbl">Dust Optical Depth (τ)</p>
+      <input type="range" id="tau" min="0.1" max="3" step="0.05" value="0.6" style="width:100%">
+      <p id="tauLabel" class="mono" style="font-size:12.5px">tau = 0.60 (Clear)</p>
+      <p class="muted">Adjusts atmospheric dust scattering and solar flux in the 3D Street View.</p>
+    </section>
+  </aside>
+
+  <section class="sheet" id="sheet">
+    <div class="sheet-head">
+      <span class="lbl">Elevation Climb from Gale Crater Floor · Click or drag on the line to move the walker</span>
+      <button class="btn sm" id="sheetToggle">Hide panel</button>
+    </div>
+    <div class="sheet-body">
+      <div class="verdict" id="verdict">
+        <p class="lbl">Route check</p>
+        <h3 id="vLabel">Safe</h3>
+        <p id="vText"></p>
+        <ul id="reasons"></ul>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="lbl">One way</span><b id="sOne">0 km</b></div>
+        <div class="stat"><span class="lbl">Round trip time</span><b id="sTime">0 min</b></div>
+        <div class="stat"><span class="lbl">Steepest slope</span><b id="sSlope">0°</b></div>
+        <div class="stat"><span class="lbl">Air left at base</span><b id="sAir">100%</b></div>
+      </div>
+      <div class="card" id="placeCard">
+        <p class="lbl">Selected place</p>
+        <h3 id="cardName"></h3>
+        <p class="muted" id="cardNote"></p>
+        <p class="mono" id="cardCoord" style="font-size:12px"></p>
+        <dl id="cardStats"></dl>
+        <div class="row">
+          <button class="btn sm" id="addPlace">+ Add to route</button>
+          <button class="btn sm primary" id="walkPlace">Walk here in 3D</button>
         </div>
       </div>
+      <canvas id="profile"></canvas>
+    </div>
+  </section>
+</div>
 
-      <!-- Action Buttons (Clean SVG Icons - No Emojis) -->
-      <div class="directions-actions">
-        <button id="btn-open-marstrek-portal" class="gmaps-round-btn btn-marstrek-badge" title="Launch Current View in NASA Mars Trek Live (trek.nasa.gov)">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-          </svg>
-        </button>
-        <button id="btn-guide" class="gmaps-round-btn" title="How to use / Simple Guide">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-          </svg>
-        </button>
-        <button id="btn-layers" class="gmaps-round-btn" title="Map Layers & Views">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-            <polyline points="2 17 12 22 22 17"/>
-            <polyline points="2 12 12 17 22 12"/>
-          </svg>
-        </button>
-        <button id="btn-menu" class="gmaps-round-btn" title="Mission Telemetry & Weather">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="3" y1="12" x2="21" y2="12"/>
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <line x1="3" y1="18" x2="21" y2="18"/>
-          </svg>
-        </button>
+<!-- ================= FULLSCREEN 3D STREET VIEW OVERLAY ================= -->
+<div id="walkView" hidden>
+  <div id="three"></div>
+  <div id="pinsOverlay"></div>
+
+  <!-- Top Back Button -->
+  <button class="w-top-back" id="backMap" title="Switch to 2D Map Planner">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  </button>
+
+  <!-- Top Center Location Pill -->
+  <div class="w-top-title">
+    <strong id="wTitle">Boxwork Ridge (Spiderweb Mineral Walls)</strong>
+    <span id="wSubTitle">Mars Walk · 1.9 km to Gediz Vallis</span>
+  </div>
+
+  <!-- Top Right Mode & Telemetry Pills -->
+  <div class="w-top-pills">
+    <button class="w-pill active" id="btnSlopeHeat" title="Toggle ground slope hazard coloring (Green <10°, Amber 10-15°, Red >15°)">Slope Heatmap: ON</button>
+    <button class="w-pill active" id="btnAutoWalk" title="Toggle continuous walking along the route">Walk Mode: ON</button>
+    <button class="w-pill" id="btnAudio" title="Synthesized Martian wind and footsteps">7D Audio: OFF</button>
+    <button class="w-pill" id="btnAvatar" title="Switch between 1st-person Street View and 3D Astronaut Avatar">Mode: 3D Avatar</button>
+    <div class="w-pill"><span class="dot ok" id="compassDot"></span><span class="mono" id="hHead">200° S</span></div>
+  </div>
+
+  <!-- Right Stack: Route Minimap & Elevation Scrubber -->
+  <div class="w-right-stack">
+    <div class="w-card">
+      <div class="w-card-head">
+        <span>ROUTE MAP · click to jump</span>
+        <span>N</span>
       </div>
+      <canvas id="mini"></canvas>
+    </div>
+    <div class="w-card">
+      <div class="w-card-head">
+        <span>ELEVATION · drag to scrub</span>
+        <span id="wElevTopLbl">16.9 km</span>
+      </div>
+      <canvas id="wElevCanvas"></canvas>
     </div>
   </div>
 
-  <!-- Google Maps Destination Picker Dropdown -->
-  <div id="destination-drawer" class="destination-drawer">
-    <div class="dest-drawer-header">
-      <div class="dest-drawer-title">CHOOSE A PLACE ON MARS</div>
-      <div class="dest-drawer-hint">Tap any site or click anywhere on the red map to drop a pin</div>
-    </div>
-    <div class="dest-list" id="dest-list">
-      <!-- Populated via JavaScript -->
-    </div>
-  </div>
-
-  <!-- Floating Map Controls (Right Side) -->
-  <div class="map-floating-controls">
-    <!-- Google Maps Street View Pegman Button (Yellow Man) -->
-    <button id="btn-streetview-toggle" class="gmaps-floating-btn pegman-btn" title="Mars Street View · Look around in 360°" aria-label="Mars Street View">
-      <svg viewBox="0 0 24 24" width="24" height="24">
-        <!-- Google Maps Pegman Silhouette -->
-        <circle cx="12" cy="4" r="3.2" fill="#F4B400"/>
-        <path d="M14.5 8h-5C8.7 8 8 8.7 8 9.5V14h2v7h4v-7h2V9.5c0-.8-.7-1.5-1.5-1.5z" fill="#F4B400"/>
-      </svg>
+  <!-- Bottom Left On-Screen D-Pad -->
+  <div class="w-dpad">
+    <div></div>
+    <button class="dpad-btn" data-dpad="up" title="Walk Forward (W / Up)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5l8 12H4z"/></svg>
     </button>
-
-    <!-- Recenter on My Location (Blue Target) -->
-    <button id="btn-recenter" class="gmaps-floating-btn" title="Re-center on Your Location" aria-label="Re-center">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="#1A73E8">
-        <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
-      </svg>
+    <div></div>
+    <button class="dpad-btn" data-dpad="left" title="Turn Left (Q / Left)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M5 12l12-8v16z"/></svg>
     </button>
+    <button class="dpad-btn dpad-leap" id="btnLeap" title="Leap 220m forward">LEAP</button>
+    <button class="dpad-btn" data-dpad="right" title="Turn Right (E / Right)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 12L7 4v16z"/></svg>
+    </button>
+    <div></div>
+    <button class="dpad-btn" data-dpad="down" title="Step Backward (S / Down)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 19L4 7h16z"/></svg>
+    </button>
+    <div></div>
   </div>
 
-  <!-- Map Layers Popover -->
-  <div id="layers-popover" class="layers-popover">
-    <div class="popover-title">MAP IMAGERY</div>
-    <div class="basemap-selector-group">
-      <label class="basemap-radio-row">
-        <input type="radio" name="basemap-choice" value="satellite" checked>
-        <span class="basemap-label">
-          <strong>Mars Satellite (Viking Orbital)</strong>
-          <small>Natural surface craters, dunes & mountain</small>
+  <!-- Bottom Center Telemetry, Sunlight & Site Switcher -->
+  <div class="w-bottom-stack">
+    <div id="alarm" class="alarm" hidden>ABORT EVA · Return to Base Camp now. Remaining O2 has reached Walkback + 45-minute reserve.</div>
+    <div id="walkHint" class="w-foot-hint"></div>
+
+    <!-- 4-Column Telemetry Card -->
+    <div class="w-telemetry">
+      <div class="w-tcol">
+        <div class="t-lbl">Elevation</div>
+        <div class="t-val" id="hElev">-3,950 meters</div>
+        <div class="t-sub" id="hElevSub">512m above Base Camp</div>
+      </div>
+      <div class="w-tcol">
+        <div class="t-lbl">Distance From Base</div>
+        <div class="t-val" id="hDist">8.0 km</div>
+        <div class="t-sub" id="hDistSub">~2 hr 40 min walk</div>
+      </div>
+      <div class="w-tcol">
+        <div class="t-lbl">Ground Slope</div>
+        <div class="t-val" id="hSlope">2.3° Uphill</div>
+        <div class="t-sub" id="hTerr">Rocky knife-edge ridges</div>
+      </div>
+      <div class="w-tcol">
+        <div class="t-lbl">Weather &amp; Suit O2</div>
+        <div class="t-val" id="hWeather">-38°C · O2 92%</div>
+        <div class="t-sub" id="hBack">Clear sky · Light red haze</div>
+      </div>
+    </div>
+
+    <!-- Sunlight & Solar Angle Card -->
+    <div class="w-sun-card">
+      <div class="w-sun-head">
+        <span class="w-sun-title">Sunlight &amp; Solar Angle</span>
+        <span class="w-sun-metrics">
+          Elevation: <b id="lblSunEl">35°</b> &nbsp;
+          Azimuth: <b id="lblSunAz">245° SW</b> &nbsp;
+          Solar Flux: <b id="lblFlux">485 W/m²</b>
         </span>
-      </label>
-      <label class="basemap-radio-row">
-        <input type="radio" name="basemap-choice" value="marstrek_mola">
-        <span class="basemap-label">
-          <strong>NASA Mars Trek Global HD</strong>
-          <small>JPL multi-mission color shaded altimetry</small>
-        </span>
-      </label>
-      <label class="basemap-radio-row">
-        <input type="radio" name="basemap-choice" value="topo_mola">
-        <span class="basemap-label">
-          <strong>Elevation Colors (MOLA)</strong>
-          <small>Blue crater floor to high yellow mountain</small>
-        </span>
-      </label>
-      <label class="basemap-radio-row">
-        <input type="radio" name="basemap-choice" value="contours">
-        <span class="basemap-label">
-          <strong>Geology Survey Chart</strong>
-          <small>USGS topography contour lines</small>
-        </span>
-      </label>
+      </div>
+      <div class="w-presets">
+        <button class="w-preset" data-time="6">Dawn 06:00</button>
+        <button class="w-preset" data-time="11.5">Midday 11:30</button>
+        <button class="w-preset on" data-time="15">Afternoon 15:00</button>
+        <button class="w-preset" data-time="18.25">Blue Sunset 18:15</button>
+        <button class="w-preset" data-time="22">Night 22:00</button>
+      </div>
+      <div class="w-slider-row">
+        <span>Sun Elevation:</span>
+        <input type="range" id="wSunSlider" min="-10" max="70" step="1" value="35">
+        <b id="wSunVal">35°</b>
+      </div>
+      <div class="w-slider-row">
+        <span>Dust Storm (τ):</span>
+        <input type="range" id="wTauSlider" min="0.1" max="3.0" step="0.05" value="0.6">
+        <b id="wTauVal">τ 0.6 (Clear)</b>
+      </div>
     </div>
 
-    <div class="popover-divider"></div>
+    <!-- Mode Tabs -->
+    <div class="w-tabs">
+      <button class="w-tab on" id="tabRoute">Gale Crater Route</button>
+      <button class="w-tab" id="tabPano">Survey Mars Planet Sites (Rover Sky)</button>
+    </div>
 
-    <div class="popover-title">HAZARD OVERLAYS</div>
-    <label class="layer-toggle-row">
-      <span>Deep Sand Dunes & Steep Cliffs</span>
-      <input type="checkbox" id="chk-topo">
-    </label>
-    <label class="layer-toggle-row">
-      <span>Curiosity Rover Landmarks</span>
-      <input type="checkbox" id="chk-science" checked>
-    </label>
-    <label class="layer-toggle-row">
-      <span>Gale Crater High-Res Orbital Photo (NASA 2.5K)</span>
-      <input type="checkbox" id="chk-orbital-photo" checked>
-    </label>
-    <label class="layer-toggle-row">
-      <span>Space Radiation Zone</span>
-      <input type="checkbox" id="chk-rad">
-    </label>
+    <!-- Site Switcher Chips -->
+    <div class="w-chips" id="wChips"></div>
+
+    <div class="w-foot-hint">Click on the ground chevron to glide forward · Drag anywhere to look 360° around Mars · Scroll to zoom</div>
+  </div>
+</div>
+
+<!-- ================= FULLSCREEN 3D MOUNT SHARP ORBIT VIEW ================= -->
+<div id="orbitView" hidden>
+  <div id="orbitThree"></div>
+  <div id="orbitPinsOverlay"></div>
+
+  <!-- Top Back Button -->
+  <button class="w-top-back" id="backFromOrbit" title="Switch to 2D Map Planner">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  </button>
+
+  <!-- Top Center Title Pill -->
+  <div class="w-top-title">
+    <strong>Mount Sharp (Aeolis Mons) · 3D Altimetry &amp; Traverse Explorer</strong>
+    <span>Gale Crater · 40 km × 40 km Digital Elevation Model (MOLA Altimetry)</span>
   </div>
 
-  <!-- BOTTOM: Google Maps Style Navigation Card -->
-  <div id="bottom-sheet" class="bottom-sheet collapsed">
-    <!-- Drag Handle -->
-    <div class="sheet-handle-bar" id="sheet-handle">
-      <div class="sheet-handle"></div>
-    </div>
-
-    <!-- Live Oxygen Bar (Visible during navigation) -->
-    <div id="live-oxygen-bar-container" class="live-oxygen-bar-container">
-      <div id="live-oxygen-bar" class="live-oxygen-bar"></div>
-    </div>
-
-    <!-- Google Maps Trip Summary Preview -->
-    <div id="sheet-summary-bar" class="sheet-summary-bar">
-      <div class="gmaps-eta-group">
-        <div class="gmaps-time-row">
-          <span class="gmaps-primary-time" id="summary-time">3 hr 52 min</span>
-          <span class="gmaps-dist" id="summary-dist">(11.6 km)</span>
-        </div>
-        <div class="gmaps-route-sub" id="summary-sub">
-          <span class="svg-inline-icon">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-              <path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7"/>
-            </svg>
-          </span>
-          <span id="summary-elevation-txt">Elev: -3,950m (512m uphill)</span> · <span id="summary-safety-tag" class="safety-tag-safe">Oxygen Safe</span>
-        </div>
-      </div>
-
-      <!-- Action Buttons Row -->
-      <div class="sheet-actions-group">
-        <!-- Open Street View Button -->
-        <button id="btn-open-streetview-card" class="gmaps-streetview-btn" title="View in Mars Street View">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="#F4B400">
-            <circle cx="12" cy="4" r="3" fill="#F4B400"/>
-            <path d="M14 8h-4c-.6 0-1 .4-1 1v4h1.5v6h3v-6H15V9c0-.6-.4-1-1-1z" fill="#F4B400"/>
-          </svg>
-          <span>Street View</span>
-        </button>
-
-        <!-- Primary Start Button -->
-        <button id="btn-start-eva" class="gmaps-start-btn">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
-          </svg>
-          <span>Start</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Active Navigation Mode Bar (When Start is pressed) -->
-    <div id="sheet-active-bar" class="sheet-active-bar">
-      <div class="nav-step-banner">
-        <div class="nav-turn-icon">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="#1A73E8">
-            <path d="M12 4l-8 8h5v8h6v-8h5z"/>
-          </svg>
-        </div>
-        <div class="nav-step-text">
-          <div class="nav-step-primary" id="nav-step-instruction">Walk South toward Mount Sharp foothills</div>
-          <div class="nav-step-sub" id="nav-step-telemetry">Remaining O2: 100% · Elapsed: T+ 00:00</div>
-        </div>
-      </div>
-      <button id="btn-return-hab" class="gmaps-exit-btn">Exit</button>
-    </div>
-
-    <!-- Expanded Sheet Details (Landmark Photos & Elevation Chart) -->
-    <div id="sheet-expanded-content" class="sheet-expanded-content">
-      <div class="wp-header-row">
-        <div>
-          <h2 id="sheet-wp-title" class="sheet-wp-title">Boxwork Ridge</h2>
-          <div id="sheet-wp-sub" class="sheet-wp-sub">Curiosity Landmark · Elevation -3,950 meters</div>
-        </div>
-        <button id="btn-close-sheet" class="btn-close-sheet">Close</button>
-      </div>
-
-      <!-- Real NASA Surface Photo -->
-      <div class="wp-photo-wrapper">
-        <img id="sheet-wp-photo" class="sheet-wp-photo" src="images/boxwork_mastcam.jpg" alt="Curiosity Surface Observation">
-        <div id="sheet-wp-photo-fallback" class="sheet-wp-photo-fallback">Photo not available for this coordinate</div>
-      </div>
-      <div id="sheet-wp-caption" class="sheet-wp-caption">Curiosity Mastcam 360-degree panorama inside the boxwork ridges</div>
-
-      <div class="wp-short-lines">
-        <div id="sheet-wp-line1" class="wp-line"><strong>What you see:</strong> Mineral walls standing 1 to 2 meters high along underground cracks.</div>
-        <div id="sheet-wp-line2" class="wp-line"><strong>Walking terrain:</strong> Sharp rocky ridges. Step carefully to protect spacesuit.</div>
-      </div>
-
-      <!-- Prioritized Scientific & Historical Mission Dossier -->
-      <div class="sheet-section-title">MISSION DOSSIER & HISTORICAL ARCHIVE (PRIORITIZED)</div>
-      <div id="dossier-accordion" class="dossier-accordion">
-        <!-- Priority 1: Vital Scientific Discoveries & Habitability -->
-        <div class="dossier-item priority-1 active" id="dossier-p1">
-          <div class="dossier-header" data-target="p1-body">
-            <span class="dossier-badge badge-p1">PRIORITY 1 · CRITICAL</span>
-            <span class="dossier-title">Key Scientific Discoveries & Habitability</span>
-            <span class="dossier-chevron">▼</span>
-          </div>
-          <div class="dossier-body" id="p1-body">
-            <div class="dossier-key-title" id="dossier-p1-title">Proof of Ancient Habitable Environment</div>
-            <div class="dossier-row">
-              <span class="dossier-label">Core Finding:</span>
-              <span class="dossier-val" id="dossier-p1-finding">Warm groundwater veins carrying dissolved minerals seeped through deep bedrock fractures.</span>
-            </div>
-            <div class="dossier-row">
-              <span class="dossier-label">Habitability Status:</span>
-              <span class="dossier-val" id="dossier-p1-habitability">Highest Priority on Mars. Preserved ancient neutral-pH water shielded from cosmic radiation.</span>
-            </div>
-            <div class="dossier-row">
-              <span class="dossier-label">Human Survival Value:</span>
-              <span class="dossier-val" id="dossier-p1-value">Protected vein networks indicate potential sub-surface ice caches and mineral hydrates.</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Priority 2: Mission History & Past Rover Archive -->
-        <div class="dossier-item priority-2" id="dossier-p2">
-          <div class="dossier-header" data-target="p2-body">
-            <span class="dossier-badge badge-p2">PRIORITY 2 · ARCHIVE</span>
-            <span class="dossier-title">Historical Rover Discoveries & Past Photos</span>
-            <span class="dossier-chevron">▶</span>
-          </div>
-          <div class="dossier-body" id="p2-body" style="display: none;">
-            <div class="dossier-row">
-              <span class="dossier-label">Rover Timeline:</span>
-              <span class="dossier-val" id="dossier-p2-sol">Curiosity MSL · Sol 4250 to 4320</span>
-            </div>
-            <div class="dossier-row">
-              <span class="dossier-label">NASA Instruments:</span>
-              <span class="dossier-val" id="dossier-p2-inst">Mastcam Stereo Camera, ChemCam Laser Spectrometer & HiRISE</span>
-            </div>
-            <div class="dossier-row">
-              <span class="dossier-label">Past History:</span>
-              <span class="dossier-val" id="dossier-p2-history">First in-situ ground photographs of polygonal boxwork ridges taken on the upper slopes of Mount Sharp.</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Priority 3: Mineralogy & Spectroscopy -->
-        <div class="dossier-item priority-3" id="dossier-p3">
-          <div class="dossier-header" data-target="p3-body">
-            <span class="dossier-badge badge-p3">PRIORITY 3 · GEOLOGY</span>
-            <span class="dossier-title">Mineral Composition & CRISM Spectroscopy</span>
-            <span class="dossier-chevron">▶</span>
-          </div>
-          <div class="dossier-body" id="p3-body" style="display: none;">
-            <div class="dossier-minerals-list" id="dossier-p3-minerals">
-              <!-- Populated via JS -->
-            </div>
-            <div class="dossier-row" style="margin-top: 6px;">
-              <span class="dossier-label">Spectral Signature:</span>
-              <span class="dossier-val" id="dossier-p3-spec">Hydrated silica and sulfate absorption bands at 1.9 μm and 2.4 μm.</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Priority 4: Surface Terrain & EVA Suit Protocol -->
-        <div class="dossier-item priority-4" id="dossier-p4">
-          <div class="dossier-header" data-target="p4-body">
-            <span class="dossier-badge badge-p4">PRIORITY 4 · PROTOCOL</span>
-            <span class="dossier-title">Surface Hazard & Spacesuit Safety Protocol</span>
-            <span class="dossier-chevron">▶</span>
-          </div>
-          <div class="dossier-body" id="p4-body" style="display: none;">
-            <div class="dossier-row">
-              <span class="dossier-label">Hazard Level:</span>
-              <span class="dossier-val" id="dossier-p4-hazard">High (14.5° incline over razor-sharp mineral curbs)</span>
-            </div>
-            <div class="dossier-row">
-              <span class="dossier-label">Suit Puncture Risk:</span>
-              <span class="dossier-val" id="dossier-p4-risk">CRITICAL: Sharp mineral blades could slice through outer beta-cloth layer.</span>
-            </div>
-            <div class="dossier-row">
-              <span class="dossier-label">EVA Flight Rule:</span>
-              <span class="dossier-val" id="dossier-p4-protocol">Maintain 1-meter standoff from vertical fin blades. Never step over blade crests.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="sheet-section-title">ELEVATION PROFILE & CLIMB</div>
-      <canvas id="sheet-elevation-canvas" class="sheet-elevation-canvas"></canvas>
-    </div>
+  <!-- Top Right Mode & Control Pills -->
+  <div class="w-top-pills">
+    <button class="w-pill active" id="btnOrbitShading" title="Toggle between MOLA Elevation colors and Slope Hazard heatmap">Shading: MOLA Height</button>
+    <button class="w-pill" id="btnOrbitMarsTrek" title="Launch official NASA JPL Mars Trek 3D/VR Portal for Gale Crater">JPL Mars Trek 3D ↗</button>
+    <button class="w-pill" id="btnOrbitReset" title="Reset 3D camera to default overview">Reset View</button>
   </div>
 
-  <!-- =====================================================================
-       FULL-SCREEN IMMERSIVE MARS STREET VIEW (360° PANORAMA)
-       ===================================================================== -->
-  <div id="streetview-overlay" class="streetview-overlay">
-    <!-- 360 Panorama Canvas Container -->
-    <div id="streetview-canvas-container" class="streetview-canvas-container"></div>
-
-    <!-- Street View Top Navigation Bar -->
-    <div class="streetview-top-bar">
-      <button id="btn-exit-streetview" class="streetview-back-btn" title="Back to Map">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="19" y1="12" x2="5" y2="12"></line>
-          <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
-      </button>
-
-      <div class="streetview-header-title">
-        <div class="sv-site-name" id="sv-site-name">Boxwork Ridge</div>
-        <div class="sv-site-sub" id="sv-site-sub">Mars Street View · Gale Crater</div>
+  <!-- Right Floating Control Panel -->
+  <div class="w-right-stack" style="width:235px">
+    <div class="w-card">
+      <div class="w-card-head">
+        <span>TERRAIN RELIEF</span>
+        <span id="lblExaggeration">1.6×</span>
       </div>
-
-      <div class="streetview-top-actions">
-        <!-- 7D Real Experience Audio Toggle Button -->
-        <button id="btn-sv-audio" class="sv-top-action-btn" title="7D Experience: Toggle Real Martian Wind & Suit Breathing Audio">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-          </svg>
-          <span id="sv-audio-label">7D Audio: OFF</span>
-          <span class="sv-audio-wave" id="sv-audio-wave"></span>
-        </button>
-
-        <!-- 3D Astronaut Avatar vs 1st Person Helmet Mode -->
-        <button id="btn-sv-mode" class="sv-top-action-btn" title="Toggle 3rd Person Suited Avatar / 1st Person Visor HUD">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="7" r="4"></circle>
-            <path d="M5.5 21v-2a6.5 6.5 0 0 1 13 0v2"></path>
-          </svg>
-          <span id="sv-mode-label">Mode: 3D Avatar</span>
-        </button>
-
-        <!-- NASA Mars Trek Live Deep-Sync Button -->
-        <button id="btn-sv-trek" class="sv-top-action-btn sv-btn-trek" title="Open this exact site in official NASA Mars Trek (trek.nasa.gov)">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-          </svg>
-          <span>NASA Mars Trek</span>
-        </button>
-
-        <div class="streetview-compass-badge" id="sv-compass-badge">
-          <span class="compass-needle" id="sv-compass-needle"></span>
-          <span id="sv-compass-text">185° S</span>
-        </div>
+      <div class="w-slider-row" style="grid-template-columns:75px 1fr 38px;margin:4px 0 8px">
+        <span>Relief:</span>
+        <input type="range" id="sliderExaggeration" min="1.0" max="3.0" step="0.1" value="1.6">
+        <b id="valExaggeration">1.6×</b>
+      </div>
+      <div class="w-card-head" style="margin-top:10px">
+        <span>CAMERA PRESETS</span>
+      </div>
+      <div class="row" style="margin-top:4px">
+        <button class="btn sm" id="btnCamGale" style="flex:1">Overview</button>
+        <button class="btn sm" id="btnCamBoxwork" style="flex:1">Boxwork</button>
+        <button class="btn sm" id="btnCamTop" style="flex:1">Aerial</button>
       </div>
     </div>
 
-    <!-- 1st Person Astronaut Helmet Visor HUD Overlay -->
-    <div id="sv-visor-overlay" class="sv-visor-overlay" style="display: none;">
-      <div class="visor-glass-frame"></div>
-      
-      <!-- Top Left Suit Vitals -->
-      <div class="visor-hud-left">
-        <div class="visor-vital-item">
-          <span class="visor-vital-label">SUIT PRESSURE</span>
-          <span class="visor-vital-val" id="visor-pressure">29.6 kPa (100% O2)</span>
-        </div>
-        <div class="visor-vital-item">
-          <span class="visor-vital-label">O2 CONSUMPTION</span>
-          <span class="visor-vital-val" id="visor-o2-burn">0.82 L/min</span>
-        </div>
-        <div class="visor-vital-item">
-          <span class="visor-vital-label">SURFACE GRAVITY</span>
-          <span class="visor-vital-val">0.372 g (Mars Normal)</span>
-        </div>
+    <div class="w-card">
+      <div class="w-card-head">
+        <span>SLOPE HAZARDS (NASA HRP)</span>
       </div>
-
-      <!-- Center Reticle & Crosshair -->
-      <div class="visor-reticle">
-        <div class="visor-crosshair"></div>
-        <div class="visor-pitch-ladder" id="visor-pitch-ladder">
-          <span class="ladder-mark mark-pos">+10°</span>
-          <span class="ladder-mark mark-zero">0° HORIZON</span>
-          <span class="ladder-mark mark-neg">-10°</span>
+      <div style="font-size:11.5px;line-height:1.55;margin-top:4px">
+        <div style="display:flex;align-items:center;gap:6px;margin:3px 0">
+          <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#22C55E"></span>
+          <span>&lt; 10° Safe Slope (3.0 km/h)</span>
         </div>
-        <div class="visor-bearing-text" id="visor-bearing-text">HEADING 185° S</div>
-      </div>
-
-      <!-- Top Right Astronaut Bio Vitals -->
-      <div class="visor-hud-right">
-        <div class="visor-vital-item">
-          <span class="visor-vital-label">ASTRONAUT HEART RATE</span>
-          <span class="visor-vital-val"><span class="pulse-dot"></span> <span id="visor-heart-rate">84 BPM</span></span>
+        <div style="display:flex;align-items:center;gap:6px;margin:3px 0">
+          <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#F59E0B"></span>
+          <span>10°–15° Caution (1.2 km/h)</span>
         </div>
-        <div class="visor-vital-item">
-          <span class="visor-vital-label">WALKBACK MARGIN</span>
-          <span class="visor-vital-val safe-green" id="visor-walkback-margin">+1h 24m SAFE</span>
-        </div>
-        <div class="visor-vital-item">
-          <span class="visor-vital-label">METABOLIC WORKLOAD</span>
-          <span class="visor-vital-val" id="visor-metabolic">295 kcal/hr</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3D Science Hotspot Notification Card -->
-    <div id="sv-hotspot-card" class="sv-hotspot-card">
-      <div class="hotspot-header">
-        <div class="hotspot-badge">IN-SITU FIELD SAMPLE DETECTED</div>
-        <button id="btn-close-hotspot" class="hotspot-close">✕</button>
-      </div>
-      <div class="hotspot-title" id="hotspot-title">Boxwork Hydrothermal Vein #04</div>
-      <div class="hotspot-desc" id="hotspot-desc">Silica-cemented vein blade standing 1.4m above regolith floor. Formed by ancient warm water seeping through fractures.</div>
-      <div class="hotspot-grid">
-        <div>Mineral: <strong id="hotspot-comp">64% Silica, 22% Sulfate</strong></div>
-        <div>Habitability: <strong class="color-safe" id="hotspot-hab">High (Ancient Water)</strong></div>
-      </div>
-      <button id="btn-collect-sample" class="hotspot-sample-btn">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
-        Collect 50g Rock Core Drill Sample
-      </button>
-    </div>
-
-    <!-- Virtual Walking Game Controls (WASD / Touch D-Pad) -->
-    <div id="sv-walking-controls" class="sv-walking-controls">
-      <div class="dpad-container">
-        <button class="dpad-btn dpad-up" id="btn-walk-forward" title="Walk Forward (W / ↑)">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><polygon points="12 4 4 16 20 16 12 4"/></svg>
-        </button>
-        <div class="dpad-mid-row">
-          <button class="dpad-btn dpad-left" id="btn-walk-left" title="Step Left (A / ←)">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><polygon points="4 12 16 4 16 20 4 12"/></svg>
-          </button>
-          <button class="dpad-btn dpad-jump" id="btn-walk-jump" title="0.38g Low-Gravity Leap (SPACE)">
-            <span>LEAP</span>
-          </button>
-          <button class="dpad-btn dpad-right" id="btn-walk-right" title="Step Right (D / →)">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><polygon points="20 12 8 4 8 20 20 12"/></svg>
-          </button>
-        </div>
-        <button class="dpad-btn dpad-down" id="btn-walk-back" title="Walk Backward (S / ↓)">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><polygon points="12 20 4 8 20 8 12 20"/></svg>
-        </button>
-      </div>
-      <div class="walking-hint-badge">
-        <span class="key-pill">W</span><span class="key-pill">A</span><span class="key-pill">S</span><span class="key-pill">D</span> or Arrows to walk · <span class="key-pill">SPACE</span> to leap in 0.38g
-      </div>
-    </div>
-
-    <!-- Street View Bottom Telemetry & Elevation HUD -->
-    <div class="streetview-bottom-hud">
-      <div class="sv-hud-card">
-        <div class="sv-metric">
-          <span class="sv-metric-label">ELEVATION</span>
-          <span class="sv-metric-val" id="sv-elev-val">-3,950 m</span>
-          <span class="sv-metric-hint" id="sv-elev-hint">512m above base camp</span>
-        </div>
-
-        <div class="sv-metric-divider"></div>
-
-        <div class="sv-metric">
-          <span class="sv-metric-label">DISTANCE FROM BASE</span>
-          <span class="sv-metric-val" id="sv-dist-val">11.6 km</span>
-          <span class="sv-metric-hint">~3 hr 52 min walk</span>
-        </div>
-
-        <div class="sv-metric-divider"></div>
-
-        <div class="sv-metric">
-          <span class="sv-metric-label">GROUND SLOPE</span>
-          <span class="sv-metric-val" id="sv-slope-val">14.5° Uphill</span>
-          <span class="sv-metric-hint">Rocky knife-edge ridges</span>
-        </div>
-
-        <div class="sv-metric-divider"></div>
-
-        <div class="sv-metric">
-          <span class="sv-metric-label">WEATHER</span>
-          <span class="sv-metric-val">-38°C</span>
-          <span class="sv-metric-hint">Clear sky · Light red haze</span>
-        </div>
-      </div>
-
-      <!-- Sunlight Angle & Time of Sol Controller -->
-      <div class="sv-solar-panel">
-        <div class="sv-solar-header">
-          <span class="sv-solar-title">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="5"></circle>
-              <line x1="12" y1="1" x2="12" y2="3"></line>
-              <line x1="12" y1="21" x2="12" y2="23"></line>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-              <line x1="1" y1="12" x2="3" y2="12"></line>
-              <line x1="21" y1="12" x2="23" y2="12"></line>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
-            SUNLIGHT & SOLAR ANGLE
-          </span>
-          <div class="sv-solar-readouts">
-            <span>Elevation: <strong id="sv-sun-elev-text">35°</strong></span>
-            <span>Azimuth: <strong id="sv-sun-az-text">245° SW</strong></span>
-            <span>Solar Flux: <strong id="sv-sun-flux-text">485 W/m²</strong></span>
-          </div>
-        </div>
-
-        <div class="sv-solar-controls">
-          <div class="sv-solar-presets">
-            <button class="sv-sun-btn" data-preset="dawn">Dawn 06:00</button>
-            <button class="sv-sun-btn" data-preset="midday">Midday 11:30</button>
-            <button class="sv-sun-btn active" data-preset="afternoon">Afternoon 15:00</button>
-            <button class="sv-sun-btn" data-preset="sunset">Blue Sunset 18:15</button>
-            <button class="sv-sun-btn" data-preset="night">Night 22:00</button>
-          </div>
-          <div class="sv-solar-slider-row">
-            <span class="slider-label">Sun Elevation:</span>
-            <input type="range" id="sv-sun-slider" min="-20" max="80" value="35" step="1">
-            <span id="sv-slider-val" class="slider-val">35°</span>
-          </div>
-          <div class="sv-solar-slider-row">
-            <span class="slider-label">Dust Storm (τ):</span>
-            <input type="range" id="sv-dust-slider" min="0.4" max="3.5" value="0.6" step="0.1">
-            <span id="sv-dust-val" class="slider-val">τ 0.6 (Clear)</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Survey Category Switcher: Local Gale vs Global Mars -->
-      <div class="sv-category-bar">
-        <button class="sv-cat-btn active" id="btn-cat-gale">Gale Crater Route</button>
-        <button class="sv-cat-btn" id="btn-cat-planetary">Survey Mars Planet Sites</button>
-      </div>
-
-      <!-- Quick Location Jump Tabs (Gale Crater) -->
-      <div class="sv-quick-tabs" id="sv-tabs-gale">
-        <button class="sv-tab-btn" data-wp="0">Base Camp</button>
-        <button class="sv-tab-btn" data-wp="1">Pahrump Hills</button>
-        <button class="sv-tab-btn" data-wp="2">Vera Rubin</button>
-        <button class="sv-tab-btn active" data-wp="4">Boxwork Ridge</button>
-        <button class="sv-tab-btn" data-wp="5">Gediz Vallis</button>
-      </div>
-
-      <!-- Planetary Survey Sites (Across Mars) -->
-      <div class="sv-quick-tabs sv-planetary-tabs" id="sv-tabs-planetary" style="display: none;">
-        <button class="sv-planet-btn active" data-site="SITE-GALE">Gale / Boxwork</button>
-        <button class="sv-planet-btn" data-site="SITE-JEZERO">Jezero Delta</button>
-        <button class="sv-planet-btn" data-site="SITE-OLYMPUS">Olympus Mons (+21km)</button>
-        <button class="sv-planet-btn" data-site="SITE-VALLES">Valles Marineris (-5.2km)</button>
-        <button class="sv-planet-btn" data-site="SITE-GUSEV">Gusev Crater</button>
-        <button class="sv-planet-btn" data-site="SITE-MERIDIANI">Meridiani Planum</button>
-        <button class="sv-planet-btn" data-site="SITE-UTOPIA">Utopia Ice Sheet</button>
-      </div>
-
-      <div class="sv-drag-hint">Drag anywhere to look 360° around Mars · Scroll to zoom</div>
-    </div>
-  </div>
-
-  <!-- HOW TO USE / GUIDE MODAL (Simple, Plain English) -->
-  <div id="guide-modal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title-group">
-          <span class="modal-tag">MARS MAPS GUIDE</span>
-          <h2>How This Map Works</h2>
-        </div>
-        <button id="btn-close-guide" class="btn-close-modal">✕</button>
-      </div>
-
-      <div class="guide-grid">
-        <div class="guide-card">
-          <div class="guide-card-icon loc">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="#1A73E8">
-              <circle cx="12" cy="12" r="8"/>
-            </svg>
-          </div>
-          <div class="guide-card-content">
-            <h3>Your Location (Blue Dot)</h3>
-            <p>You start at <strong>Base Camp</strong> on the flat crater plain. The pulsing blue dot shows where your habitat is right now.</p>
-          </div>
-        </div>
-
-        <div class="guide-card">
-          <div class="guide-card-icon path">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="#EA4335">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-            </svg>
-          </div>
-          <div class="guide-card-content">
-            <h3>Destination (Red Pin)</h3>
-            <p>The red pin is where you're walking. Tap <strong>"Change"</strong> in the top search bar to pick landmarks, or <strong>click anywhere on Mars</strong> to drop a pin.</p>
-          </div>
-        </div>
-
-        <div class="guide-card">
-          <div class="guide-card-icon ring">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#1A73E8" stroke-width="2" stroke-dasharray="3 3">
-              <circle cx="12" cy="12" r="9"/>
-            </svg>
-          </div>
-          <div class="guide-card-content">
-            <h3>Oxygen Safety Ring (Walkback Circle)</h3>
-            <p>The dashed blue ring around your base shows your <strong>oxygen safety limit</strong> (3.2 km). As long as you stay inside this ring, you have enough suit oxygen to walk back safely. Going beyond it requires a rover!</p>
-          </div>
-        </div>
-
-        <div class="guide-card">
-          <div class="guide-card-icon sv">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="#F4B400">
-              <circle cx="12" cy="4" r="3"/>
-              <path d="M14 8h-4c-.6 0-1 .4-1 1v4h1.5v6h3v-6H15V9c0-.6-.4-1-1-1z"/>
-            </svg>
-          </div>
-          <div class="guide-card-content">
-            <h3>Mars Street View</h3>
-            <p>Tap the <strong>yellow Pegman button</strong> or the <strong>Street View button</strong> to stand on the surface and look around 360° at real Curiosity rover panoramic photos with live elevation.</p>
-          </div>
-        </div>
-
-        <div class="guide-card">
-          <div class="guide-card-icon eva">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="#1E8E3E">
-              <polygon points="5 3 19 12 5 21 5 3"/>
-            </svg>
-          </div>
-          <div class="guide-card-content">
-            <h3>Start Walking</h3>
-            <p>Tap the green <strong>"Start"</strong> button to simulate the walk with live suit oxygen burn and GPS tracking.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button id="btn-dismiss-guide" class="gmaps-start-btn btn-guide-done">Got It — Start Exploring</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3D ORBIT VIEW MODAL -->
-  <div id="orbit-3d-modal" class="modal-overlay">
-    <div class="modal-card orbit-modal-card">
-      <div class="modal-header">
-        <div class="modal-title-group">
-          <span class="modal-tag">PLANETARY VIEW</span>
-          <h2>Interactive 3D Mars</h2>
-        </div>
-        <button id="btn-close-3d" class="btn-close-modal">✕</button>
-      </div>
-
-      <div class="orbit-3d-body">
-        <div id="large-mars-canvas-container" class="large-mars-container"></div>
-        <div class="orbit-info-panel">
-          <div class="orbit-stat">
-            <span class="stat-label">SITE:</span>
-            <span class="stat-val">Gale Crater / Mount Sharp</span>
-          </div>
-          <div class="orbit-stat">
-            <span class="stat-label">COORDINATES:</span>
-            <span class="stat-val">4°35' S, 137°26' E</span>
-          </div>
-          <div class="orbit-stat">
-            <span class="stat-label">HOW TO USE:</span>
-            <span class="stat-val">Click and drag with mouse or finger to spin</span>
-          </div>
-          <button id="btn-zoom-to-gale" class="gmaps-start-btn btn-orbit-zoom">Fly Camera to Gale Crater</button>
+        <div style="display:flex;align-items:center;gap:6px;margin:3px 0">
+          <span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:#EF4444"></span>
+          <span>&gt; 15° NO-GO Hazard Limit</span>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MENU / WEATHER & SOURCES SHEET -->
-  <div id="menu-modal" class="menu-modal">
-    <div class="menu-modal-content">
-      <div class="menu-header">
-        <h3>Mission Weather & Sources</h3>
-        <button id="btn-close-menu" class="btn-close-sheet">Done</button>
-      </div>
-
-      <div class="menu-section">
-        <div class="menu-label">CURRENT MARS WEATHER (SOL 4320)</div>
-        <div class="telemetry-compact-grid">
-          <div>Ground Temp: <strong>-38°C (-36°F)</strong></div>
-          <div>Air Temp: <strong>-52°C (-62°F)</strong></div>
-          <div>Atmosphere: <strong>748 Pa (Thin CO2)</strong></div>
-          <div>Radiation: <strong>0.21 mGy/day (Normal)</strong></div>
-        </div>
-      </div>
-
-      <div class="menu-section">
-        <div class="menu-label">DATA SOURCES</div>
-        <div class="sources-text">
-          <p><strong>Topography:</strong> NASA Mars Global Surveyor (MGS) MOLA laser altimetry.</p>
-          <p><strong>Surface Photography:</strong> NASA Curiosity Rover Mastcam panoramas and MRO HiRISE orbital cameras.</p>
-          <p><strong>Environment:</strong> NASA MSL REMS daily surface weather and RAD radiation measurements.</p>
-        </div>
-      </div>
-
-      <div class="menu-footer">
-        NASA / JPL-Caltech / MSSS / University of Arizona / USGS Astrogeology Science Center
-      </div>
-    </div>
+  <!-- Bottom Landmark Switcher & Hint -->
+  <div class="w-bottom-stack">
+    <div class="w-chips" id="orbitChips"></div>
+    <div class="w-foot-hint">Drag to Orbit 360° · Right-Click or Shift-Drag to Pan · Scroll to Zoom · Click any landmark pin to inspect</div>
   </div>
+</div>
 
-  <script src="mars_data.js"></script>
-  <script src="mars_panoramas.js"></script>
-  <script src="eva_physics.js"></script>
-  <script src="app.js"></script>
+<div id="notice" class="notice" hidden></div>
+
+<!-- Load Leaflet & Three.js synchronously with dual-CDN fallback -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+<script>
+if (!window.THREE) {
+  document.write('<scr' + 'ipt src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></scr' + 'ipt>');
+}
+</script>
+<script>
+/* ================= HELPERS & CONSTANTS ================= */
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+const mix3 = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+
+let noticeT = 0;
+function notice(msg) {
+  const n = $('notice');
+  n.textContent = msg; n.hidden = false;
+  clearTimeout(noticeT);
+  noticeT = setTimeout(() => { n.hidden = true; }, 3200);
+}
+function safe(fn) {
+  try { return fn(); }
+  catch (e) { console.error(e); }
+}
+
+/* Planetocentric Geometry: Gale Crater -> Mount Sharp (Aeolis Mons) 40 km x 40 km box */
+const ORIGIN = { lat: -4.70, lon: 137.55 };
+const BASE_DATUM = -4462;
+const MPD = 59240, MPDLON = MPD * Math.cos(ORIGIN.lat * D2R);
+const HALF = 20000, STEP = 250, NG = 161;
+const RESERVE = 10, AIR_PER_KM = 0.8, MAXSTOPS = 8;
+const DIRS = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+const ll2xy = (lat, lon) => ({ x: (lon - ORIGIN.lon) * MPDLON, y: (lat - ORIGIN.lat) * MPD });
+const xy2ll = (x, y) => ({ lat: ORIGIN.lat + y / MPD, lon: ORIGIN.lon + x / MPDLON });
+const MC = ll2xy(-4.95, 137.75);
+
+/* ================= TERRAIN & BOXWORK RIDGE MODEL ================= */
+function ridgeAt(x, y) {
+  const a = Math.pow(1 - Math.abs(Math.sin(Math.PI * (x + 120 * Math.sin(y / 600)) / 850)), 6);
+  const b = Math.pow(1 - Math.abs(Math.sin(Math.PI * (y + 120 * Math.cos(x / 600)) / 850)), 6);
+  return a + b;
+}
+function elev(x, y) {
+  const d = Math.hypot(x - MC.x, y - MC.y);
+  const t = Math.max(0, 1 - d / 26000);
+  let h = 4200 * Math.pow(t, 1.55);
+  h += 24 * ridgeAt(x, y) * Math.min(1, h / 350);
+  h += 48 * Math.sin(x / 1500) * Math.cos(y / 2100) + 18 * Math.sin((x + y) / 520);
+  return h;
+}
+function microElev(x, y) {
+  const base = elev(x, y);
+  const ripple = 0.24 * Math.sin(x * 0.42 + Math.sin(y * 0.08) * 2.5) + 0.12 * Math.cos(y * 0.35 - x * 0.15);
+  return base + ripple;
+}
+function slopeAt(x, y) {
+  const s = 60;
+  const gx = (elev(x + s, y) - elev(x - s, y)) / (2 * s);
+  const gy = (elev(x, y + s) - elev(x, y - s)) / (2 * s);
+  return Math.atan(Math.hypot(gx, gy)) * R2D;
+}
+function directionalSlopeAt(x, y, heading) {
+  const sH = Math.sin(heading), cH = Math.cos(heading);
+  const step = 8;
+  const hCurr = elev(x, y);
+  const hAhead = elev(x + sH * step, y + cH * step);
+  return Math.atan2(hAhead - hCurr, step) * R2D;
+}
+function terrainOf(x, y, h) {
+  if (ridgeAt(x, y) > 1.15 && h > 150) return { name: 'Rocky knife-edge ridges', eta: 1.0 };
+  if (h > 450) return { name: 'Rocky knife-edge ridges', eta: 1.1 };
+  if (h > 180) return { name: 'Cohesive rock and regolith', eta: 1.25 };
+  return { name: 'Aeolian sand ripples', eta: 1.65 };
+}
+function pointAt(x, y) {
+  const h = elev(x, y);
+  return { x, y, h, s: slopeAt(x, y), e: terrainOf(x, y, h).eta };
+}
+function straightLeg(a, b) {
+  const L = Math.hypot(b.x - a.x, b.y - a.y), n = Math.max(1, Math.ceil(L / 120)), out = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    out.push(pointAt(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t));
+  }
+  return out;
+}
+
+const gH = new Float32Array(NG * NG), gS = new Float32Array(NG * NG), gE = new Float32Array(NG * NG);
+for (let j = 0; j < NG; j++) for (let i = 0; i < NG; i++) {
+  const x = -HALF + i * STEP, y = -HALF + j * STEP, k = j * NG + i;
+  const h = elev(x, y);
+  gH[k] = h; gS[k] = slopeAt(x, y); gE[k] = terrainOf(x, y, h).eta;
+}
+function nodeOf(x, y) {
+  const i = clamp(Math.round((x + HALF) / STEP), 0, NG - 1);
+  const j = clamp(Math.round((y + HALF) / STEP), 0, NG - 1);
+  return j * NG + i;
+}
+
+/* ================= PLACES & STATE ================= */
+const PLACES = [
+  {
+    name: 'Base Camp',
+    short: 'Base Camp',
+    sub: 'Bradbury Landing · Gale Crater Floor',
+    lat: -4.5895, lon: 137.4417,
+    note: 'Curiosity landing area on the flat northern floor of Gale Crater.',
+    pano: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/PIA16101-MarsCuriosityRover-MtSharp-20120827.jpg/1920px-PIA16101-MarsCuriosityRover-MtSharp-20120827.jpg'
+  },
+  {
+    name: 'Pahrump Hills',
+    short: 'Pahrump Hills',
+    sub: 'Murray Formation Mudstones · Basal Mount Sharp',
+    lat: -4.6650, lon: 137.4500,
+    note: 'Fine-grained lakebed mudstones at the base of Mount Sharp.',
+    pano: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/PIA19069-MarsCuriosityRover-PahrumpHills-20141118.jpg/1920px-PIA19069-MarsCuriosityRover-PahrumpHills-20141118.jpg'
+  },
+  {
+    name: 'Vera Rubin Ridge',
+    short: 'Vera Rubin',
+    sub: 'Vera Rubin Ridge (Hematite Scarp)',
+    lat: -4.6600, lon: 137.4700,
+    note: 'Iron-oxide cemented ridge recording ancient groundwater diagenesis.',
+    pano: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/PIA22210-MarsCuriosityRover-VeraRubinRidge-20180125.jpg/1920px-PIA22210-MarsCuriosityRover-VeraRubinRidge-20180125.jpg'
+  },
+  {
+    name: 'Boxwork Ridge',
+    short: 'Boxwork Ridge',
+    sub: 'Boxwork Ridge (Spiderweb Mineral Walls)',
+    lat: -4.7000, lon: 137.5200,
+    note: 'Primary science target: honeycomb network of mineral-cemented bedrock fractures.',
+    pano: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/PIA19912-MarsCuriosityRover-MountSharp-20150924.jpg/1920px-PIA19912-MarsCuriosityRover-MountSharp-20150924.jpg'
+  },
+  {
+    name: 'Gediz Vallis',
+    short: 'Gediz Vallis',
+    sub: 'Gediz Vallis Channel & Debris Mound',
+    lat: -4.8200, lon: 137.6100,
+    note: 'Late-stage wind and water-carved channel high on the Mount Sharp flank.',
+    pano: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/PIA26443-Mars-CuriosityRover-GedizVallisChannel-20240601.jpg/1920px-PIA26443-Mars-CuriosityRover-GedizVallisChannel-20240601.jpg'
+  }
+].map(p => ({ ...p, ...ll2xy(p.lat, p.lon) }));
+const BASE = PLACES[0];
+
+const S = {
+  mode: 'walk', // Opens directly in 3D Street View so user sees Mars right away
+  layer: 'relief',
+  routeMode: 'safe',
+  addStops: false,
+  tod: 15,
+  sunEl: 35,
+  tau: 0.6,
+  sel: 3, // Boxwork Ridge
+  autoWalk: false,
+  audioOn: false,
+  avatarMode: false,
+  slopeHeatmap: true, // Realistic slope hazard overlay in 3D Street View (<10° Safe, 10°-15° Caution, >15° Hazard)
+  panoSky: false
+};
+
+const WK = {
+  ready: false,
+  x: PLACES[3].x,
+  y: PLACES[3].y,
+  heading: 200 * D2R,
+  pitch: -0.05,
+  fov: 62,
+  air: 92,
+  walked: 0,
+  bobPhase: 0,
+  keys: {},
+  dpad: {},
+  glideTarget: null,
+  hint: '',
+  hintUntil: 0
+};
+
+const ROUTE = { stops: [], pts: [], L: 0, air: 0, hrs: 0, maxS: 0, caution: 0, noGo: false, failed: false, verdict: null };
+let T = null;
+let map = null, routeLayer = null, stopLayer = null, placeLayer = null, tileLayer = null, tileWarned = false;
+let PROF = [];
+let walkRunning = false, lastT = 0, lastHud = 0;
+
+const LAYERS = {
+  relief: { label: 'Shaded relief (MOLA height)', url: 'https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg', max: 5 },
+  heat: { label: 'Thermal inertia (THEMIS IR)', url: 'https://trek.nasa.gov/tiles/Mars/EQ/Mars_MO_THEMIS-IR-Day_mosaic_global_100m_v12/1.0.0/default/default028mm/{z}/{y}/{x}.png', max: 7 },
+  optic: { label: 'Optical mosaic (Viking/CTX)', url: 'https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg', max: 6 },
+  plain: { label: 'Plain background', url: null }
+};
+
+/* ================= A* HAZARD ROUTER ================= */
+class MinHeap {
+  constructor() { this.a = []; }
+  get size() { return this.a.length; }
+  push(v, k) {
+    const a = this.a; a.push({ v, k });
+    let i = a.length - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (a[p].k <= a[i].k) break;
+      [a[p], a[i]] = [a[i], a[p]]; i = p;
+    }
+  }
+  pop() {
+    const a = this.a, top = a[0], last = a.pop();
+    if (a.length) {
+      a[0] = last;
+      let i = 0;
+      for (;;) {
+        const l = 2 * i + 1, r = l + 1; let m = i;
+        if (l < a.length && a[l].k < a[m].k) m = l;
+        if (r < a.length && a[r].k < a[m].k) m = r;
+        if (m === i) break;
+        [a[m], a[i]] = [a[i], a[m]]; i = m;
+      }
+    }
+    return top.v;
+  }
+}
+
+function airCost(L, s, e) { return L / 1000 * AIR_PER_KM * (1 + 1.4 * Math.min(s, 15) / 15) * e; }
+
+function findSafePath(a, b) {
+  const s = nodeOf(a.x, a.y), t = nodeOf(b.x, b.y), N = NG * NG;
+  if (s === t) return [pointAt(a.x, a.y), pointAt(b.x, b.y)];
+  const tx = (t % NG) * STEP - HALF, ty = Math.floor(t / NG) * STEP - HALF;
+  const hf = k => Math.hypot((k % NG) * STEP - HALF - tx, Math.floor(k / NG) * STEP - HALF - ty);
+  const g = new Float64Array(N).fill(Infinity), prev = new Int32Array(N).fill(-1), done = new Uint8Array(N);
+  const open = new MinHeap();
+  g[s] = 0; open.push(s, hf(s));
+  let guard = 0;
+  while (open.size && guard++ < 250000) {
+    const k = open.pop();
+    if (done[k]) continue;
+    if (k === t) break;
+    done[k] = 1;
+    const ci = k % NG, cj = (k - ci) / NG;
+    for (const [di, dj] of DIRS) {
+      const ni = ci + di, nj = cj + dj;
+      if (ni < 0 || nj < 0 || ni >= NG || nj >= NG) continue;
+      const nk = nj * NG + ni;
+      if (done[nk] || gS[nk] > 15) continue;
+      const len = STEP * (di && dj ? 1.41421 : 1);
+      const cost = len * (1 + 2.5 * Math.pow((gS[k] + gS[nk]) / 30, 2)) * ((gE[k] + gE[nk]) / 2);
+      const ng = g[k] + cost;
+      if (ng < g[nk]) { g[nk] = ng; prev[nk] = k; open.push(nk, ng + hf(nk)); }
+    }
+  }
+  if (prev[t] < 0) return null;
+  const nodes = [];
+  for (let k = t; k !== -1; k = prev[k]) { nodes.push(k); if (k === s) break; }
+  nodes.reverse();
+  const pts = nodes.map(k => ({ x: (k % NG) * STEP - HALF, y: Math.floor(k / NG) * STEP - HALF, h: gH[k], s: gS[k], e: gE[k] }));
+  pts[0] = pointAt(a.x, a.y);
+  pts[pts.length - 1] = pointAt(b.x, b.y);
+  return pts;
+}
+
+function pathStats(pts) {
+  let L = 0, air = 0, hrs = 0, caution = 0, noGo = false;
+  let maxS = pts.length ? pts[0].s : 0;
+  if (pts.length) pts[0].d = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i - 1], q = pts[i];
+    const d = Math.hypot(q.x - p.x, q.y - p.y);
+    q.d = (p.d || 0) + d;
+    const s = (p.s + q.s) / 2, e = (p.e + q.e) / 2;
+    L += d;
+    air += airCost(d, s, e);
+    hrs += d / 1000 / (s > 10 ? 1.2 : 3.0);
+    if (s > 10 && s <= 15) caution += d;
+    if (q.s > 15) noGo = true;
+    if (q.s > maxS) maxS = q.s;
+  }
+  return { L, air, hrs, maxS, caution, noGo };
+}
+
+function computeRoute() {
+  const stops = [BASE, ...ROUTE.stops];
+  let pts = [], failed = false;
+  if (!ROUTE.stops.length) pts = [pointAt(BASE.x, BASE.y)];
+  else for (let i = 0; i < stops.length - 1; i++) {
+    const a = stops[i], b = stops[i + 1];
+    let seg = null;
+    if (S.routeMode === 'safe') { seg = findSafePath(a, b); if (!seg) failed = true; }
+    if (!seg) seg = straightLeg(a, b);
+    pts = pts.length ? pts.concat(seg.slice(1)) : pts.concat(seg);
+  }
+  const st = pathStats(pts);
+  Object.assign(ROUTE, { pts, L: st.L, air: st.air, hrs: st.hrs, maxS: st.maxS, caution: st.caution, noGo: st.noGo, failed });
+}
+
+function verdictOf() {
+  const airLeft = 100 - 2 * ROUTE.air, rt = 2 * ROUTE.hrs;
+  if (!ROUTE.stops.length) return { level: 'neutral', title: 'Neutral', text: 'Only Base Camp is set.', reasons: ['Click any place to add it to the route.'], airLeft, rt };
+  const why = []; let level = 'safe';
+  if (ROUTE.noGo || ROUTE.maxS > 15) { level = 'stop'; why.push('Part of the route exceeds the 15° NASA HRP slope limit.'); }
+  if (ROUTE.failed) { level = 'stop'; why.push('No path under 15° links two stops.'); }
+  if (airLeft < RESERVE) { level = 'stop'; why.push('Air left at base would drop below the 45-minute reserve (' + RESERVE + '%).'); }
+  if (level !== 'stop') {
+    if (rt > 6) { level = 'caution'; why.push('Full multi-site traverse exceeds 6 hours; stage oxygen depots or walk single legs.'); }
+    if (ROUTE.caution > 0) { level = 'caution'; why.push('Includes 10°–15° caution slopes (speed 1.2 km/h).'); }
+    if (airLeft < 25) { level = 'caution'; why.push('Monitor suit O2 walkback margin on upper slopes.'); }
+  }
+  if (level === 'safe') why.push('All segments stay under 10° and keep the 45-minute O2 reserve.');
+  const text = level === 'safe' ? 'Every step stays within nominal slope and O2 limits.'
+    : level === 'caution' ? 'Passable under NASA HRP rules; monitor slope & walkback reserve.'
+    : 'Hazard detected on route; switch to Safest Path or shorten stops.';
+  const title = level === 'safe' ? 'Safe' : level === 'caution' ? 'Walk with care' : 'Do not go';
+  return { level, title, text, reasons: why, airLeft, rt };
+}
+
+function loadDefaultGaleRoute() {
+  ROUTE.stops = PLACES.slice(1).map(p => ({ name: p.name, x: p.x, y: p.y, lat: p.lat, lon: p.lon }));
+}
+
+function rebuildRoute() {
+  safe(() => {
+    computeRoute();
+    ROUTE.verdict = verdictOf();
+    drawRouteMap();
+    updateSheet();
+    renderStops();
+    renderChecklist();
+    updatePills();
+    drawProfile();
+    drawMini();
+    drawWalkElev();
+    buildRouteVisual();
+    if (typeof buildOrbitRoute === 'function') buildOrbitRoute();
+  });
+}
+
+/* ================= ROUTE EDITING ================= */
+function addStop(ll) {
+  if (ROUTE.stops.length >= MAXSTOPS) { notice('Up to 8 stops. Remove one first.'); return; }
+  const p = ll2xy(ll.lat, ll.lng);
+  const x = clamp(p.x, -HALF, HALF), y = clamp(p.y, -HALF, HALF);
+  const q = xy2ll(x, y);
+  ROUTE.stops.push({ name: 'Stop ' + (ROUTE.stops.length + 1), x, y, lat: q.lat, lon: q.lon });
+  rebuildRoute();
+}
+function addPlace(i) {
+  if (i === 0) { notice('Base Camp is the starting habitat of every walk.'); return; }
+  if (ROUTE.stops.length >= MAXSTOPS) { notice('Up to 8 stops. Remove one first.'); return; }
+  const p = PLACES[i];
+  if (!ROUTE.stops.some(s => s.name === p.name)) {
+    ROUTE.stops.push({ name: p.name, x: p.x, y: p.y, lat: p.lat, lon: p.lon });
+    notice('Added ' + p.name + ' to the route.');
+    rebuildRoute();
+  } else {
+    notice(p.name + ' is already on the route.');
+  }
+}
+function removeStop(i) { ROUTE.stops.splice(i, 1); rebuildRoute(); }
+function setRouteMode(m) {
+  S.routeMode = m;
+  $('modeSafe').classList.toggle('on', m === 'safe');
+  $('modeStraight').classList.toggle('on', m === 'straight');
+  rebuildRoute();
+}
+
+/* ================= SIDEBAR & SHEET UI ================= */
+function fmtH(h) {
+  if (h < 1) return Math.max(1, Math.round(h * 60)) + ' min';
+  const hrs = Math.floor(h), mins = Math.round((h - hrs) * 60);
+  return hrs + ' hr ' + mins + ' min';
+}
+function dms(lat, lon) {
+  const f = (v, p, n) => {
+    const a = Math.abs(v), d = Math.floor(a), m = Math.floor((a - d) * 60), s = Math.round(((a - d) * 60 - m) * 60);
+    return d + '\u00B0' + String(m).padStart(2, '0') + "'" + String(s).padStart(2, '0') + '" ' + (v < 0 ? n : p);
+  };
+  return f(lat, 'N', 'S') + ', ' + f(lon, 'E', 'W');
+}
+function updateSheet() {
+  const v = ROUTE.verdict || verdictOf();
+  $('verdict').className = 'verdict ' + v.level;
+  $('vLabel').textContent = v.title;
+  $('vText').textContent = v.text;
+  const ul = $('reasons'); ul.innerHTML = '';
+  v.reasons.forEach(t => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+  const has = ROUTE.stops.length > 0;
+  $('sOne').textContent = has ? (ROUTE.L / 1000).toFixed(1) + ' km' : '0 km';
+  $('sTime').textContent = has ? fmtH(ROUTE.hrs) : '0 min';
+  $('sSlope').textContent = has ? ROUTE.maxS.toFixed(1) + '\u00B0' : '0\u00B0';
+  $('sAir').textContent = Math.max(0, 100 - ROUTE.air).toFixed(0) + '%';
+  renderPlaceCard();
+}
+function renderStops() {
+  const el = $('stops'); el.innerHTML = '';
+  if (!ROUTE.stops.length) {
+    el.innerHTML = '<li class="muted">No stops set. Click Walk this route to auto-add the selected site.</li>';
+    return;
+  }
+  ROUTE.stops.forEach((s, i) => {
+    const li = document.createElement('li');
+    const span = document.createElement('span'); span.textContent = (i + 1) + '. ' + s.name;
+    const b = document.createElement('button'); b.className = 'btn sm'; b.textContent = 'Remove';
+    b.onclick = () => removeStop(i);
+    li.appendChild(span); li.appendChild(b); el.appendChild(li);
+  });
+}
+function renderChecklist() {
+  const has = ROUTE.stops.length > 0;
+  const safeRoute = has && !ROUTE.noGo && ROUTE.maxS <= 15 && !ROUTE.failed;
+  const items = [
+    ['Science site: Mount Sharp boxwork ridges', 'Done'],
+    ['3+ datasets: MOLA, THEMIS, Optical + 3D', 'Done'],
+    ['No slope above 15 degrees on route', safeRoute ? 'Done' : 'To do'],
+    ['45-minute O2 walkback reserve tracked', 'Done'],
+    ['Sampling stops on boxwork ridges', has ? 'Done' : 'To do']
+  ];
+  const ul = $('checklist'); ul.innerHTML = '';
+  items.forEach(([text, st]) => {
+    const li = document.createElement('li');
+    const span = document.createElement('span'); span.textContent = text;
+    const tag = document.createElement('span'); tag.className = 'tag ' + st.replace(' ', ''); tag.textContent = st;
+    li.appendChild(span); li.appendChild(tag); ul.appendChild(li);
+  });
+}
+function updatePills() {
+  $('pillAir').textContent = S.mode === 'walk'
+    ? 'Suit O2 left: ' + WK.air.toFixed(0) + '%'
+    : 'Route O2 left: ' + Math.max(0, 100 - ROUTE.air).toFixed(0) + '%';
+  const p = PLACES[S.sel];
+  $('pillCoord').textContent = 'Selected: ' + dms(p.lat, p.lon);
+}
+
+function renderPlaces() {
+  const q = ($('search').value || '').trim().toLowerCase();
+  const ul = $('places'); ul.innerHTML = '';
+  PLACES.forEach((p, i) => {
+    if (q && !(p.name + ' ' + p.note).toLowerCase().includes(q)) return;
+    const li = document.createElement('li');
+    const b = document.createElement('button');
+    b.className = 'item' + (i === S.sel ? ' on' : '');
+    const name = document.createElement('b'); name.textContent = p.name;
+    const info = document.createElement('span'); info.className = 'mono'; info.style.fontSize = '11.5px';
+    info.textContent = i === 0 ? 'start' : (Math.hypot(p.x - BASE.x, p.y - BASE.y) / 1000).toFixed(1) + ' km';
+    b.appendChild(name); b.appendChild(info);
+    b.onclick = () => selectPlace(i);
+    li.appendChild(b);
+
+    const wBtn = document.createElement('button');
+    wBtn.className = 'btn sm primary';
+    wBtn.textContent = '3D';
+    wBtn.title = 'Jump to ' + p.name + ' in 3D Street View';
+    wBtn.onclick = e => { e.stopPropagation(); jumpToPlace(i, true); };
+    li.appendChild(wBtn);
+    ul.appendChild(li);
+  });
+}
+
+function renderWalkChips() {
+  const host = $('wChips');
+  host.innerHTML = '';
+  PLACES.forEach((p, i) => {
+    const b = document.createElement('button');
+    b.className = 'w-chip' + (i === S.sel ? ' on' : '');
+    b.textContent = p.short;
+    b.onclick = () => jumpToPlace(i, true);
+    host.appendChild(b);
+  });
+}
+
+function selectPlace(i) {
+  S.sel = i;
+  renderPlaces();
+  renderWalkChips();
+  renderPlaceCard();
+  drawProfile();
+  updatePills();
+  if (map && S.mode === 'map') map.panTo([PLACES[i].lat, PLACES[i].lon]);
+}
+
+function renderPlaceCard() {
+  const p = PLACES[S.sel];
+  const h = elev(p.x, p.y), s = slopeAt(p.x, p.y), t = terrainOf(p.x, p.y, h);
+  const d = Math.hypot(p.x - BASE.x, p.y - BASE.y);
+  $('cardName').textContent = p.name;
+  $('cardNote').textContent = p.note;
+  $('cardCoord').textContent = dms(p.lat, p.lon);
+  $('cardStats').innerHTML =
+    '<div><dt>Elevation (MOLA)</dt><dd>' + Math.round(BASE_DATUM + h).toLocaleString() + ' m</dd></div>' +
+    '<div><dt>Ground slope</dt><dd>' + s.toFixed(1) + '\u00B0</dd></div>' +
+    '<div><dt>Surface unit</dt><dd>' + t.name + '</dd></div>' +
+    '<div><dt>From Base Camp</dt><dd>' + (d / 1000).toFixed(1) + ' km</dd></div>';
+}
+
+/* ================= 2D CANVASES ================= */
+function sizeCanvas(c, fw, fh) {
+  const dpr = window.devicePixelRatio || 1;
+  const W = c.clientWidth || fw, H = c.clientHeight || fh;
+  c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
+  const g = c.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { g, W, H };
+}
+function nearestIdx(pts, x, y) {
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < pts.length; i++) {
+    const d = (pts[i].x - x) ** 2 + (pts[i].y - y) ** 2;
+    if (d < bd) { bd = d; best = i; }
+  }
+  return best;
+}
+function profileSource() {
+  if (ROUTE.stops.length && ROUTE.pts.length > 1) return ROUTE.pts;
+  const p = PLACES[S.sel] || PLACES[3];
+  const pts = straightLeg(BASE, p);
+  pathStats(pts);
+  return pts;
+}
+
+function drawProfile() {
+  const c = $('profile');
+  if (!c) return;
+  const { g, W, H } = sizeCanvas(c, 520, 165);
+  g.fillStyle = '#FBF8F2'; g.fillRect(0, 0, W, H);
+  const pts = profileSource(); PROF = pts;
+  const total = Math.max(1, pts[pts.length - 1].d || 1);
+  let hi = 300, lo = 0;
+  for (const p of pts) { if (p.h > hi) hi = p.h; if (p.h < lo) lo = p.h; }
+  const top = 22, bot = H - 20;
+  const Y = h => bot - (h - lo) / (hi - lo) * (bot - top);
+  const X = d => d / total * W;
+  g.font = '11px "IBM Plex Mono", monospace';
+  g.fillStyle = '#6A5D4E';
+  g.fillText('Climb: +' + Math.round(hi - lo) + ' m above Base Camp', 8, 14);
+  g.fillText('Base', 8, H - 5);
+  g.textAlign = 'right';
+  g.fillText((total / 1000).toFixed(1) + ' km', W - 8, H - 5);
+  g.textAlign = 'left';
+  g.strokeStyle = '#DDD3C2'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, bot); g.lineTo(W, bot); g.stroke();
+  g.lineWidth = 3; g.lineCap = 'round';
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i - 1], q = pts[i], s = Math.max(p.s, q.s);
+    g.strokeStyle = s > 15 ? '#7C1D27' : s > 10 ? '#C3841A' : '#3B6A4E';
+    g.beginPath(); g.moveTo(X(p.d || 0), Y(p.h)); g.lineTo(X(q.d || 0), Y(q.h)); g.stroke();
+  }
+  ROUTE.stops.forEach((s, i) => {
+    const k = nearestIdx(pts, s.x, s.y);
+    const px = X(pts[k].d || 0), py = Y(pts[k].h);
+    g.fillStyle = '#B0461C';
+    g.beginPath(); g.arc(px, py, 7, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#FBF8F2';
+    g.font = '600 9.5px "IBM Plex Mono", monospace';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(String(i + 1), px, py);
+  });
+  const w = nearestIdx(pts, WK.x, WK.y);
+  const wx = X(pts[w].d || 0), wy = Y(pts[w].h);
+  g.strokeStyle = '#241A10'; g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(wx, top); g.lineTo(wx, bot); g.stroke();
+  g.fillStyle = '#241A10';
+  g.beginPath(); g.arc(wx, wy, 4.5, 0, Math.PI * 2); g.fill();
+}
+
+function drawWalkElev() {
+  const c = $('wElevCanvas');
+  if (!c) return;
+  const { g, W, H } = sizeCanvas(c, 190, 74);
+  g.clearRect(0, 0, W, H);
+  const pts = profileSource(); PROF = pts;
+  const total = Math.max(1, pts[pts.length - 1].d || 1);
+  $('wElevTopLbl').textContent = (total / 1000).toFixed(1) + ' km';
+  let hi = 300, lo = 0;
+  for (const p of pts) { if (p.h > hi) hi = p.h; if (p.h < lo) lo = p.h; }
+  const padL = 8, padR = 8, top = 10, bot = H - 15;
+  const X = d => padL + (d / total) * (W - padL - padR);
+  const Y = h => bot - ((h - lo) / Math.max(1, hi - lo)) * (bot - top);
+
+  const grad = g.createLinearGradient(0, top, 0, bot);
+  grad.addColorStop(0, 'rgba(224,96,64,0.55)');
+  grad.addColorStop(1, 'rgba(224,96,64,0.06)');
+  g.beginPath();
+  g.moveTo(X(0), bot);
+  pts.forEach(p => g.lineTo(X(p.d || 0), Y(p.h)));
+  g.lineTo(X(total), bot);
+  g.closePath();
+  g.fillStyle = grad;
+  g.fill();
+
+  g.beginPath();
+  pts.forEach((p, i) => i ? g.lineTo(X(p.d || 0), Y(p.h)) : g.moveTo(X(p.d || 0), Y(p.h)));
+  g.strokeStyle = '#F87171';
+  g.lineWidth = 2;
+  g.stroke();
+
+  g.font = '500 9px "IBM Plex Mono", monospace';
+  g.fillStyle = '#94A3B8';
+  g.textAlign = 'center';
+  g.fillText('B', X(0), H - 3);
+  ROUTE.stops.forEach((s, i) => {
+    const k = nearestIdx(pts, s.x, s.y);
+    const sx = X(pts[k].d || 0);
+    g.strokeStyle = 'rgba(255,255,255,0.12)';
+    g.lineWidth = 1;
+    g.beginPath(); g.moveTo(sx, top); g.lineTo(sx, bot); g.stroke();
+    g.fillText(String(i + 1), sx, H - 3);
+  });
+
+  const w = nearestIdx(pts, WK.x, WK.y);
+  const wx = X(pts[w].d || 0), wy = Y(pts[w].h);
+  g.strokeStyle = '#FFFFFF';
+  g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(wx, wy); g.lineTo(wx, bot); g.stroke();
+  g.fillStyle = '#3B82F6';
+  g.beginPath(); g.arc(wx, wy, 4.5, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#FFFFFF';
+  g.stroke();
+}
+
+function drawMini() {
+  const c = $('mini');
+  if (!c) return;
+  const { g, W, H } = sizeCanvas(c, 190, 150);
+  g.fillStyle = '#18181E';
+  g.fillRect(0, 0, W, H);
+
+  let minX = BASE.x, maxX = BASE.x, minY = BASE.y, maxY = BASE.y;
+  PLACES.forEach(p => {
+    if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+  });
+  minX = Math.min(minX, WK.x) - 1800; maxX = Math.max(maxX, WK.x) + 1800;
+  minY = Math.min(minY, WK.y) - 1800; maxY = Math.max(maxY, WK.y) + 1800;
+  const span = Math.max(maxX - minX, maxY - minY, 4000);
+  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+  const X = x => W / 2 + ((x - cx) / span) * (W - 28);
+  const Y = y => H / 2 - ((y - cy) / span) * (H - 28);
+
+  g.strokeStyle = 'rgba(255,255,255,0.05)';
+  g.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    g.beginPath();
+    g.moveTo(i * W / 4, 0); g.lineTo(i * W / 4, H);
+    g.moveTo(0, i * H / 4); g.lineTo(W, i * H / 4);
+    g.stroke();
+  }
+
+  const pts = ROUTE.pts.length > 1 ? ROUTE.pts : PLACES;
+  g.strokeStyle = 'rgba(59,130,246,0.35)';
+  g.lineWidth = 6;
+  g.lineCap = 'round';
+  g.beginPath();
+  pts.forEach((p, i) => i ? g.lineTo(X(p.x), Y(p.y)) : g.moveTo(X(p.x), Y(p.y)));
+  g.stroke();
+
+  g.strokeStyle = '#60A5FA';
+  g.lineWidth = 2.2;
+  g.beginPath();
+  pts.forEach((p, i) => i ? g.lineTo(X(p.x), Y(p.y)) : g.moveTo(X(p.x), Y(p.y)));
+  g.stroke();
+
+  const drawStop = (x, y, label, isBase) => {
+    g.fillStyle = isBase ? '#EF4444' : '#DC2626';
+    g.beginPath(); g.arc(X(x), Y(y), 4.5, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#FFFFFF'; g.lineWidth = 1.3; g.stroke();
+    g.fillStyle = '#E2E8F0';
+    g.font = '500 9.5px "IBM Plex Sans", sans-serif';
+    g.fillText(label, X(x) + 7, Y(y) + 3);
+  };
+  drawStop(BASE.x, BASE.y, 'Base', true);
+  ROUTE.stops.forEach((s, i) => drawStop(s.x, s.y, String(i + 1), false));
+
+  const wx = X(WK.x), wy = Y(WK.y);
+  g.save();
+  g.translate(wx, wy);
+  g.rotate(WK.heading);
+  const coneGrad = g.createRadialGradient(0, 0, 2, 0, 0, 26);
+  coneGrad.addColorStop(0, 'rgba(96,165,250,0.55)');
+  coneGrad.addColorStop(1, 'rgba(96,165,250,0)');
+  g.fillStyle = coneGrad;
+  g.beginPath();
+  g.moveTo(0, 0);
+  g.arc(0, 0, 26, -Math.PI / 2 - 0.45, -Math.PI / 2 + 0.45);
+  g.closePath();
+  g.fill();
+  g.restore();
+
+  g.fillStyle = '#3B82F6';
+  g.beginPath(); g.arc(wx, wy, 5.5, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#FFFFFF'; g.lineWidth = 2; g.stroke();
+
+  c._miniMapConv = { cx, cy, span, W, H };
+}
+
+/* ================= 2D LEAFLET MAP ================= */
+function initMap() {
+  if (!window.L) return;
+  map = L.map('map', {
+    crs: L.CRS.EPSG4326, minZoom: 7, maxZoom: 12, zoomSnap: 0.5,
+    maxBounds: [[-5.4, 136.8], [-4.1, 138.2]], maxBoundsViscosity: 0.9, zoomControl: false
+  }).setView([ORIGIN.lat, ORIGIN.lon], 9.5);
+  L.control.zoom({ position: 'topright' }).addTo(map);
+  const a = xy2ll(-HALF, -HALF), b = xy2ll(HALF, HALF);
+  L.rectangle([[a.lat, a.lon], [b.lat, b.lon]], { color: '#B0461C', weight: 2, dashArray: '6 6', fill: false }).addTo(map);
+  placeLayer = L.layerGroup().addTo(map);
+  routeLayer = L.layerGroup().addTo(map);
+  stopLayer = L.layerGroup().addTo(map);
+  PLACES.forEach((p, i) => {
+    L.circleMarker([p.lat, p.lon], {
+      radius: 8, color: '#241A10', weight: 2,
+      fillColor: i === 0 ? '#3B6A4E' : '#B0461C', fillOpacity: 1
+    }).bindTooltip(p.name + ' (click to select)').on('click', () => selectPlace(i)).addTo(placeLayer);
+  });
+  map.on('click', e => { if (S.addStops) addStop(e.latlng); });
+}
+function drawRouteMap() {
+  if (!map) return;
+  routeLayer.clearLayers(); stopLayer.clearLayers();
+  if (ROUTE.pts.length > 1) {
+    const ll = ROUTE.pts.map(p => { const q = xy2ll(p.x, p.y); return [q.lat, q.lon]; });
+    // 1. Glowing outer safety corridor halo
+    L.polyline(ll, { color: '#00F0FF', weight: 10, opacity: 0.38, lineCap: 'round', lineJoin: 'round' }).addTo(routeLayer);
+    // 2. High-contrast neon cyan/emerald safe path
+    const routeColor = ROUTE.noGo ? '#EF4444' : ROUTE.caution > 0 ? '#F59E0B' : '#00E5FF';
+    L.polyline(ll, { color: routeColor, weight: 4.5, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }).addTo(routeLayer);
+    // 3. Inner bright white dashed guidance centerline
+    L.polyline(ll, { color: '#FFFFFF', weight: 1.8, opacity: 0.92, dashArray: '6 8' }).addTo(routeLayer);
+  }
+  ROUTE.stops.forEach((s, i) => {
+    L.marker([s.lat, s.lon], {
+      interactive: false,
+      icon: L.divIcon({ className: '', html: '<div class="stopdot">' + (i + 1) + '</div>', iconSize: [24, 24], iconAnchor: [12, 12] })
+    }).addTo(stopLayer);
+  });
+}
+function setLayer(name) {
+  if (!map) return;
+  S.layer = name;
+  if (tileLayer) { map.removeLayer(tileLayer); tileLayer = null; }
+  const cfg = LAYERS[name];
+  if (cfg && cfg.url) {
+    tileLayer = L.tileLayer(cfg.url, { minZoom: 7, maxZoom: 12, maxNativeZoom: cfg.max, attribution: 'NASA Mars Trek' }).addTo(map);
+    tileLayer.on('tileerror', () => {
+      if (!tileWarned) { tileWarned = true; notice('Some orbital map tiles could not stream; check internet or use Plain.'); }
+    });
+  }
+  document.querySelectorAll('[data-layer]').forEach(b => b.classList.toggle('on', b.dataset.layer === name));
+}
+
+/* ================= 7D WEB-AUDIO SYNTHESIZER ================= */
+let audioCtx = null, windGain = null;
+function toggleAudio() {
+  S.audioOn = !S.audioOn;
+  const btn = $('btnAudio');
+  btn.textContent = '7D Audio: ' + (S.audioOn ? 'ON' : 'OFF');
+  btn.classList.toggle('active', S.audioOn);
+  if (S.audioOn) {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC();
+      const bufSize = audioCtx.sampleRate * 3;
+      const noiseBuf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const out = noiseBuf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < bufSize; i++) {
+        const w = Math.random() * 2 - 1;
+        out[i] = (last + 0.03 * w) / 1.03;
+        last = out[i];
+      }
+      const src = audioCtx.createBufferSource();
+      src.buffer = noiseBuf;
+      src.loop = true;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 260;
+      filter.Q.value = 2.2;
+      windGain = audioCtx.createGain();
+      windGain.gain.value = 0.18;
+      src.connect(filter);
+      filter.connect(windGain);
+      windGain.connect(audioCtx.destination);
+      src.start();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (windGain) windGain.gain.value = 0.18;
+  } else if (windGain && audioCtx) {
+    windGain.gain.value = 0;
+  }
+}
+function playFootstep() {
+  if (!S.audioOn || !audioCtx) return;
+  const dur = 0.08;
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * dur, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) {
+    d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.35));
+  }
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 420;
+  const g = audioCtx.createGain();
+  g.gain.value = 0.14;
+  src.connect(filter);
+  filter.connect(g);
+  g.connect(audioCtx.destination);
+  src.start();
+}
+
+/* ================= PHOTOREALISTIC 3D MARTIAN STREET VIEW ================= */
+function makeMarsTextures(mod) {
+  const SZ = 512;
+  const cDiff = document.createElement('canvas'); cDiff.width = cDiff.height = SZ;
+  const gD = cDiff.getContext('2d');
+  const cBump = document.createElement('canvas'); cBump.width = cBump.height = SZ;
+  const gB = cBump.getContext('2d');
+
+  const idD = gD.createImageData(SZ, SZ), dD = idD.data;
+  const idB = gB.createImageData(SZ, SZ), dB = idB.data;
+
+  const hash = (x, y) => {
+    const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+    return n - Math.floor(n);
+  };
+
+  for (let y = 0; y < SZ; y++) {
+    for (let x = 0; x < SZ; x++) {
+      const u = x / SZ * Math.PI * 2, v = y / SZ * Math.PI * 2;
+      const warp = 0.55 * Math.sin(v * 2 + Math.cos(u * 2));
+      const ripple1 = Math.sin(u * 14 + warp * 3.2);
+      const ripple2 = Math.sin(u * 28 - v * 2 + warp * 2.0) * 0.45;
+      const trackGroove = Math.pow(Math.abs(Math.sin(u * 7 + warp)), 1.6);
+      const grit = (hash(x, y) - 0.5) * 0.35 + (hash(x >> 1, y >> 1) - 0.5) * 0.45;
+      const vein = Math.pow(1 - Math.abs(Math.sin(u * 3 + Math.sin(v * 3) * 1.4)), 14);
+
+      const hVal = clamp(0.5 + 0.24 * ripple1 + 0.12 * ripple2 + 0.12 * trackGroove + 0.14 * grit + 0.25 * vein, 0, 1);
+      const bByte = Math.round(hVal * 255);
+
+      const idx = (y * SZ + x) * 4;
+      dB[idx] = dB[idx + 1] = dB[idx + 2] = bByte; dB[idx + 3] = 255;
+
+      const shade = 0.68 + 0.38 * hVal + 0.18 * vein;
+      dD[idx]     = clamp(Math.round(178 * shade), 35, 245);
+      dD[idx + 1] = clamp(Math.round(114 * shade), 22, 200);
+      dD[idx + 2] = clamp(Math.round(74  * shade), 14, 155);
+      dD[idx + 3] = 255;
+    }
+  }
+  gD.putImageData(idD, 0, 0);
+  gB.putImageData(idB, 0, 0);
+
+  const diffTex = new mod.CanvasTexture(cDiff);
+  diffTex.wrapS = diffTex.wrapT = mod.RepeatWrapping;
+  diffTex.repeat.set(110, 110);
+  diffTex.needsUpdate = true;
+
+  const bumpTex = new mod.CanvasTexture(cBump);
+  bumpTex.wrapS = bumpTex.wrapT = mod.RepeatWrapping;
+  bumpTex.repeat.set(110, 110);
+  bumpTex.needsUpdate = true;
+
+  return { diffTex, bumpTex };
+}
+
+function buildSkyTexture(mod, sunEl, tau) {
+  const W = 512, H = 256;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const dayTop = [148, 92, 62], dayHor = [224, 168, 124];
+  const duskTop = [74, 52, 64], duskHor = [205, 118, 72];
+  const nightTop = [18, 15, 22], nightHor = [48, 34, 28];
+
+  const tDay = clamp((sunEl + 4) / 28, 0, 1);
+  let top = sunEl >= 0 ? mix3(duskTop, dayTop, tDay) : mix3(nightTop, duskTop, clamp((sunEl + 12) / 12, 0, 1));
+  let hor = sunEl >= 0 ? mix3(duskHor, dayHor, tDay) : mix3(nightHor, duskHor, clamp((sunEl + 12) / 12, 0, 1));
+  const dustCol = [208, 134, 78];
+  const dF = clamp((tau - 0.3) / 2.7, 0, 0.75);
+  top = mix3(top, dustCol, dF * 0.7);
+  hor = mix3(hor, dustCol, dF);
+
+  const grad = g.createLinearGradient(0, 0, 0, H * 0.56);
+  grad.addColorStop(0, 'rgb(' + top.map(Math.round).join(',') + ')');
+  grad.addColorStop(0.75, 'rgb(' + hor.map(Math.round).join(',') + ')');
+  grad.addColorStop(1, 'rgb(' + hor.map(v => Math.round(v * 0.85)).join(',') + ')');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, W, H);
+
+  const tex = new mod.CanvasTexture(c);
+  tex.mapping = mod.EquirectangularReflectionMapping;
+  return { tex, horRGB: hor.map(v => v / 255) };
+}
+
+function initThreeScene() {
+  if (T) return T;
+  const mod = window.THREE;
+  if (!mod) throw new Error('Three.js not loaded');
+
+  const host = $('three');
+  const w = host.clientWidth || window.innerWidth;
+  const h = host.clientHeight || (window.innerHeight - 49);
+
+  const renderer = new mod.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  renderer.setSize(w, h, false);
+  renderer.domElement.style.width = '100%';
+  renderer.domElement.style.height = '100%';
+  renderer.domElement.style.display = 'block';
+  host.innerHTML = '';
+  host.appendChild(renderer.domElement);
+
+  const scene = new mod.Scene();
+  scene.fog = new mod.FogExp2(0xd8a074, 0.00042);
+
+  const camera = new mod.PerspectiveCamera(WK.fov, w / Math.max(1, h), 0.25, 28000);
+  const hemi = new mod.HemisphereLight(0xffead2, 0x6b3e23, 0.85);
+  const sun = new mod.DirectionalLight(0xffe6c2, 1.85);
+  scene.add(hemi, sun);
+
+  const { diffTex, bumpTex } = makeMarsTextures(mod);
+  const groundMat = new mod.MeshStandardMaterial({
+    map: diffTex,
+    bumpMap: bumpTex,
+    bumpScale: 0.55,
+    roughness: 0.84,
+    metalness: 0.06,
+    vertexColors: true
+  });
+
+  const skyDome = new mod.Mesh(
+    new mod.SphereGeometry(18000, 48, 24),
+    new mod.MeshBasicMaterial({ side: mod.BackSide, fog: false })
+  );
+  scene.add(skyDome);
+
+  const rockGeo = new mod.DodecahedronGeometry(1, 1);
+  const rPos = rockGeo.attributes.position;
+  for (let i = 0; i < rPos.count; i++) {
+    const vx = rPos.getX(i), vy = rPos.getY(i), vz = rPos.getZ(i);
+    const s = 0.82 + 0.28 * Math.sin(vx * 3.1 + vz * 2.7);
+    rPos.setXYZ(i, vx * s * 1.25, vy * 0.62 * s, vz * s * 1.1);
+  }
+  rockGeo.computeVertexNormals();
+  const rockMat = new mod.MeshStandardMaterial({
+    color: 0x5c331e,
+    roughness: 0.9,
+    metalness: 0.08,
+    bumpMap: bumpTex,
+    bumpScale: 0.18
+  });
+  const ROCK_COUNT = 1200;
+  const rocks = new mod.InstancedMesh(rockGeo, rockMat, ROCK_COUNT);
+  scene.add(rocks);
+
+  const cursorGroup = new mod.Group();
+  const ringGeo = new mod.RingGeometry(0.9, 1.25, 32);
+  ringGeo.rotateX(-Math.PI / 2);
+  const ringMesh = new mod.Mesh(ringGeo, new mod.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, side: mod.DoubleSide, depthWrite: false }));
+  cursorGroup.add(ringMesh);
+
+  const chevShape = new mod.Shape();
+  chevShape.moveTo(0, 1.3);
+  chevShape.lineTo(1.35, -0.5);
+  chevShape.lineTo(0.85, -0.95);
+  chevShape.lineTo(0, 0.25);
+  chevShape.lineTo(-0.85, -0.95);
+  chevShape.lineTo(-1.35, -0.5);
+  chevShape.closePath();
+  const chevGeo = new mod.ShapeGeometry(chevShape);
+  chevGeo.rotateX(-Math.PI / 2);
+  const forwardChevron = new mod.Mesh(chevGeo, new mod.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, side: mod.DoubleSide, depthWrite: false }));
+  scene.add(forwardChevron);
+  scene.add(cursorGroup);
+
+  const avatar = new mod.Group();
+  const suitMat = new mod.MeshStandardMaterial({ color: 0xf1ece1, roughness: 0.5 });
+  const visorMat = new mod.MeshStandardMaterial({ color: 0xd97706, metalness: 0.75, roughness: 0.2 });
+  const packMat = new mod.MeshStandardMaterial({ color: 0xb0461c, roughness: 0.6 });
+  const torso = new mod.Mesh(new mod.BoxGeometry(0.52, 0.68, 0.32), suitMat);
+  torso.position.y = 1.15;
+  const pack = new mod.Mesh(new mod.BoxGeometry(0.44, 0.58, 0.24), packMat);
+  pack.position.set(0, 1.2, 0.24);
+  const helmet = new mod.Mesh(new mod.SphereGeometry(0.24, 16, 16), suitMat);
+  helmet.position.y = 1.68;
+  const visor = new mod.Mesh(new mod.SphereGeometry(0.21, 16, 16), visorMat);
+  visor.position.set(0, 1.68, -0.07);
+  const legL = new mod.Mesh(new mod.BoxGeometry(0.18, 0.72, 0.2), suitMat);
+  legL.position.set(-0.14, 0.42, 0);
+  const legR = new mod.Mesh(new mod.BoxGeometry(0.18, 0.72, 0.2), suitMat);
+  legR.position.set(0.14, 0.42, 0);
+  avatar.add(torso, pack, helmet, visor, legL, legR);
+  avatar.visible = false;
+  scene.add(avatar);
+
+  const routeGroup = new mod.Group();
+  scene.add(routeGroup);
+
+  const raycaster = new mod.Raycaster();
+  const mouseNDC = new mod.Vector2();
+
+  T = {
+    renderer, scene, camera, sun, hemi, routeGroup,
+    ground: null, groundMat, diffTex, bumpTex,
+    skyDome,
+    rocks, ROCK_COUNT,
+    cursorGroup, forwardChevron,
+    avatar, legL, legR,
+    raycaster, mouseNDC,
+    patchC: { x: 1e9, y: 1e9 },
+    lastW: w, lastH: h
+  };
+
+  let downPt = null, dragged = false;
+  host.addEventListener('pointerdown', e => {
+    downPt = { x: e.clientX, y: e.clientY };
+    dragged = false;
+    host.setPointerCapture(e.pointerId);
+  });
+  host.addEventListener('pointermove', e => {
+    const rect = host.getBoundingClientRect();
+    T.mouseNDC.x = ((e.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
+    T.mouseNDC.y = -((e.clientY - rect.top) / Math.max(1, rect.height)) * 2 + 1;
+
+    if (downPt) {
+      const dx = e.clientX - downPt.x, dy = e.clientY - downPt.y;
+      if (Math.hypot(dx, dy) > 4) dragged = true;
+      downPt = { x: e.clientX, y: e.clientY };
+      WK.heading = (WK.heading - dx * 0.0045 + Math.PI * 2) % (Math.PI * 2);
+      WK.pitch = clamp(WK.pitch - dy * 0.0038, -1.1, 1.1);
+    } else if (T.ground) {
+      T.raycaster.setFromCamera(T.mouseNDC, T.camera);
+      const hits = T.raycaster.intersectObject(T.ground);
+      if (hits.length && hits[0].distance < 180) {
+        const p = hits[0].point;
+        T.cursorGroup.position.set(p.x, p.y + 0.12, p.z);
+        T.cursorGroup.visible = true;
+      } else {
+        T.cursorGroup.visible = false;
+      }
+    }
+  });
+  const endPointer = e => {
+    if (downPt && !dragged && T.ground) {
+      const rect = host.getBoundingClientRect();
+      T.mouseNDC.x = ((e.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
+      T.mouseNDC.y = -((e.clientY - rect.top) / Math.max(1, rect.height)) * 2 + 1;
+      T.raycaster.setFromCamera(T.mouseNDC, T.camera);
+      const hits = T.raycaster.intersectObjects([T.forwardChevron, T.ground]);
+      if (hits.length) {
+        const p = hits[0].point;
+        const tx = p.x, ty = -p.z;
+        const dist = Math.hypot(tx - WK.x, ty - WK.y);
+        if (dist > 0.8 && dist < 350) {
+          if (slopeAt(tx, ty) > 15) {
+            hint('Slope ahead exceeds 15° NASA safety limit. Pick a gentler angle.');
+          } else {
+            WK.glideTarget = { x: tx, y: ty };
+            playFootstep();
+          }
+        }
+      }
+    }
+    downPt = null;
+  };
+  host.addEventListener('pointerup', endPointer);
+  host.addEventListener('pointercancel', () => { downPt = null; });
+  host.addEventListener('dblclick', () => leapForward(160));
+  host.addEventListener('wheel', e => {
+    e.preventDefault();
+    WK.fov = clamp(WK.fov + e.deltaY * 0.03, 32, 85);
+    T.camera.fov = WK.fov;
+    T.camera.updateProjectionMatrix();
+  }, { passive: false });
+
+  return T;
+}
+
+function groundVertexColor(x, y, h) {
+  const s = slopeAt(x, y);
+  if (S.slopeHeatmap) {
+    // NASA HRP Slope Hazard Heatmap:
+    // Green (<10°) = SAFE nominal EVA walk (up to 3.0 km/h)
+    // Amber (10°-15°) = CAUTION steep terrain, walk at 1.2 km/h
+    // Red (>15°) = NO-GO HAZARD, spacesuit tipping / slip risk
+    if (s > 15) {
+      return [0.92, 0.15, 0.15];
+    } else if (s > 10) {
+      return [0.95, 0.65, 0.10];
+    } else {
+      const t = clamp(s / 10, 0, 1);
+      return [0.22 + 0.25 * t, 0.72 - 0.10 * t, 0.35 - 0.12 * t];
+    }
+  }
+
+  const t = clamp(h / 2200, 0, 1);
+  let r = 0.96 - 0.18 * t, g = 0.84 - 0.22 * t, b = 0.72 - 0.22 * t;
+  if (ridgeAt(x, y) > 1.2 && h > 140) {
+    r *= 0.82; g *= 0.76; b *= 0.72;
+  }
+  return [r, g, b];
+}
+
+function rebuildPatch() {
+  if (!T) return;
+  const mod = window.THREE;
+  const P = 1400, SEG = 160, N = SEG + 1, cx = WK.x, cy = WK.y;
+  const pos = new Float32Array(N * N * 3), col = new Float32Array(N * N * 3), uv = new Float32Array(N * N * 2), idx = [];
+
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const u = (i / SEG) * 2 - 1, v = (j / SEG) * 2 - 1;
+    const su = Math.sign(u) * (0.35 * Math.abs(u) + 0.65 * u * u);
+    const sv = Math.sign(v) * (0.35 * Math.abs(v) + 0.65 * v * v);
+    const X = cx + su * P, Y = cy + sv * P;
+    const h = microElev(X, Y);
+    const k3 = (j * N + i) * 3, k2 = (j * N + i) * 2;
+    const c = groundVertexColor(X, Y, h);
+    pos[k3] = X; pos[k3 + 1] = h; pos[k3 + 2] = -Y;
+    col[k3] = c[0]; col[k3 + 1] = c[1]; col[k3 + 2] = c[2];
+    uv[k2] = X / 1400; uv[k2 + 1] = Y / 1400;
+  }
+  for (let j = 0; j < SEG; j++) for (let i = 0; i < SEG; i++) {
+    const a = j * N + i, b = a + 1, c = a + N, d = c + 1;
+    idx.push(a, b, c, b, d, c);
+  }
+  const geo = new mod.BufferGeometry();
+  geo.setAttribute('position', new mod.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new mod.BufferAttribute(col, 3));
+  geo.setAttribute('uv', new mod.BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+
+  if (T.ground) {
+    T.ground.geometry.dispose();
+    T.ground.geometry = geo;
+  } else {
+    T.ground = new mod.Mesh(geo, T.groundMat);
+    T.scene.add(T.ground);
+  }
+
+  const dummy = new mod.Object3D();
+  const cell = 11;
+  const baseI = Math.floor(cx / cell), baseJ = Math.floor(cy / cell);
+  const gridR = 17;
+  let rIdx = 0;
+  for (let dj = -gridR; dj <= gridR && rIdx < T.ROCK_COUNT; dj++) {
+    for (let di = -gridR; di <= gridR && rIdx < T.ROCK_COUNT; di++) {
+      const gi = baseI + di, gj = baseJ + dj;
+      const h1 = Math.sin(gi * 127.1 + gj * 311.7) * 43758.5453;
+      const r1 = h1 - Math.floor(h1);
+      const h2 = Math.sin(gi * 269.5 + gj * 183.3) * 43758.5453;
+      const r2 = h2 - Math.floor(h2);
+      const rx = (gi + r1) * cell;
+      const ry = (gj + r2) * cell;
+      const rh = microElev(rx, ry);
+      const scale = 0.18 + Math.pow(r1, 3.2) * 1.45;
+      dummy.position.set(rx, rh + scale * 0.18, -ry);
+      dummy.rotation.set(r1 * 0.6, r2 * 6.28, (r1 - r2) * 0.5);
+      dummy.scale.set(scale * (0.9 + 0.4 * r2), scale * 0.65, scale * (0.9 + 0.4 * r1));
+      dummy.updateMatrix();
+      T.rocks.setMatrixAt(rIdx++, dummy.matrix);
+    }
+  }
+  T.rocks.instanceMatrix.needsUpdate = true;
+  T.patchC = { x: cx, y: cy };
+}
+
+function buildRouteVisual() {
+  if (!T) return;
+  const mod = window.THREE;
+  while (T.routeGroup.children.length) {
+    const ch = T.routeGroup.children[0];
+    if (ch.geometry) ch.geometry.dispose();
+    T.routeGroup.remove(ch);
+  }
+  const pts = ROUTE.pts;
+  if (pts.length > 1) {
+    // 1. Glowing neon navigation ribbon on the surface
+    const pos = [];
+    const colors = [];
+    const ribbonHalfWidth = 1.15; // 2.3 meters wide corridor
+    for (let i = 1; i < pts.length; i++) {
+      const p = pts[i - 1], q = pts[i];
+      const ax = p.x, az = -p.y, bx = q.x, bz = -q.y;
+      const ay = microElev(p.x, p.y) + 0.38, by = microElev(q.x, q.y) + 0.38;
+      const dx = bx - ax, dz = bz - az, L = Math.hypot(dx, dz) || 1;
+      const nx = -dz / L * ribbonHalfWidth, nz = dx / L * ribbonHalfWidth;
+
+      const segSlope = Math.max(p.s, q.s);
+      let cr = 0.0, cg = 0.95, cb = 1.0;
+      if (segSlope > 15) { cr = 0.95; cg = 0.15; cb = 0.15; }
+      else if (segSlope > 10) { cr = 0.95; cg = 0.65; cb = 0.10; }
+
+      // 2 triangles per segment
+      pos.push(ax + nx, ay, az + nz, ax - nx, ay, az - nz, bx + nx, by, bz + nz);
+      pos.push(ax - nx, ay, az - nz, bx - nx, by, bz - nz, bx + nx, by, bz + nz);
+
+      for (let k = 0; k < 6; k++) {
+        colors.push(cr, cg, cb);
+      }
+    }
+    const g = new mod.BufferGeometry();
+    g.setAttribute('position', new mod.Float32BufferAttribute(pos, 3));
+    g.setAttribute('color', new mod.Float32BufferAttribute(colors, 3));
+    const ribbonMat = new mod.MeshBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.68,
+      side: mod.DoubleSide,
+      depthWrite: false
+    });
+    T.routeGroup.add(new mod.Mesh(g, ribbonMat));
+
+    // 2. High-contrast edge rails
+    const railL = [], railR = [];
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
+      const py = microElev(p.x, p.y) + 0.42;
+      const nextP = pts[Math.min(pts.length - 1, i + 1)];
+      const prevP = pts[Math.max(0, i - 1)];
+      const dx = nextP.x - prevP.x, dz = -(nextP.y - prevP.y), L = Math.hypot(dx, dz) || 1;
+      const nx = -dz / L * ribbonHalfWidth, nz = dx / L * ribbonHalfWidth;
+      railL.push(new mod.Vector3(p.x + nx, py, -p.y + nz));
+      railR.push(new mod.Vector3(p.x - nx, py, -p.y - nz));
+    }
+    const railMat = new mod.LineBasicMaterial({ color: 0x00FFFF, transparent: true, opacity: 0.95, linewidth: 2 });
+    const gL = new mod.BufferGeometry().setFromPoints(railL);
+    const gR = new mod.BufferGeometry().setFromPoints(railR);
+    T.routeGroup.add(new mod.Line(gL, railMat));
+    T.routeGroup.add(new mod.Line(gR, railMat));
+
+    // 3. 3D Waypoint Beacons along the route
+    ROUTE.stops.forEach(s => {
+      const sy = microElev(s.x, s.y);
+      const cylGeo = new mod.CylinderGeometry(0.3, 0.3, 18, 16);
+      const cylMat = new mod.MeshBasicMaterial({ color: 0x00F0FF, transparent: true, opacity: 0.45 });
+      const cyl = new mod.Mesh(cylGeo, cylMat);
+      cyl.position.set(s.x, sy + 9, -s.y);
+      T.routeGroup.add(cyl);
+
+      const rGeo = new mod.RingGeometry(1.2, 1.8, 24);
+      rGeo.rotateX(-Math.PI / 2);
+      const rMat = new mod.MeshBasicMaterial({ color: 0x10B981, side: mod.DoubleSide, transparent: true, opacity: 0.85 });
+      const rMesh = new mod.Mesh(rGeo, rMat);
+      rMesh.position.set(s.x, sy + 0.2, -s.y);
+      T.routeGroup.add(rMesh);
+    });
+  }
+}
+
+function updateSky() {
+  const el = S.sunEl;
+  const azDeg = (180 + (S.tod - 12) * 15 + 360) % 360;
+  const azComp = ['N','NE','E','SE','S','SW','W','NW'][Math.round(azDeg / 45) % 8];
+  const flux = el <= 0 ? 0 : Math.round(590 * Math.sin(el * D2R) * Math.exp(-S.tau * 0.28));
+
+  $('lblSunEl').textContent = Math.round(el) + '\u00B0';
+  $('lblSunAz').textContent = Math.round(azDeg) + '\u00B0 ' + azComp;
+  $('lblFlux').textContent = flux + ' W/m\u00B2';
+  $('wSunSlider').value = el;
+  $('wSunVal').textContent = Math.round(el) + '\u00B0';
+  $('wTauSlider').value = S.tau;
+  const tauWord = S.tau < 0.8 ? 'Clear' : S.tau < 1.6 ? 'Hazy' : 'Dust Storm';
+  $('wTauVal').textContent = '\u03C4 ' + S.tau.toFixed(1) + ' (' + tauWord + ')';
+  $('tau').value = S.tau;
+  $('tauLabel').textContent = 'tau = ' + S.tau.toFixed(2) + ' (' + tauWord + ')';
+
+  if (!T || !window.THREE) return;
+  const { tex, horRGB } = buildSkyTexture(window.THREE, el, S.tau);
+  if (!S.panoSky) {
+    if (T.skyDome.material.map) T.skyDome.material.map.dispose();
+    T.skyDome.material.map = tex;
+    T.skyDome.material.color.setHex(0xffffff);
+    T.skyDome.material.needsUpdate = true;
+  }
+  T.scene.fog.color.setRGB(horRGB[0], horRGB[1], horRGB[2]);
+  T.scene.fog.density = 0.00028 + S.tau * 0.00018;
+
+  const elR = Math.max(2, el) * D2R, azR = azDeg * D2R;
+  T.sun.position.set(
+    WK.x + Math.sin(azR) * Math.cos(elR) * 2000,
+    Math.sin(elR) * 2000,
+    -WK.y - Math.cos(azR) * Math.cos(elR) * 2000
+  );
+  T.sun.intensity = el > 0 ? (0.55 + 1.45 * Math.sin(elR)) : 0.12;
+  T.hemi.intensity = el > 0 ? (0.35 + 0.55 * Math.sin(elR)) : 0.15;
+}
+
+function applyPanoSky() {
+  if (!T || !window.THREE) return;
+  if (!S.panoSky) {
+    updateSky();
+    return;
+  }
+  const mod = window.THREE;
+  const p = PLACES[S.sel] || PLACES[3];
+  const loader = new mod.TextureLoader();
+  loader.setCrossOrigin('anonymous');
+  notice('Loading NASA Curiosity rover panorama for ' + p.name + '...');
+  loader.load(
+    p.pano,
+    tex => {
+      tex.mapping = mod.EquirectangularReflectionMapping;
+      T.skyDome.material.map = tex;
+      T.skyDome.material.needsUpdate = true;
+      notice('NASA Curiosity Rover panorama active on horizon dome.');
+    },
+    undefined,
+    () => {
+      S.panoSky = false;
+      $('tabPano').classList.remove('on');
+      $('tabRoute').classList.add('on');
+      updateSky();
+      notice('Panorama image offline; using 3D atmospheric sky.');
+    }
+  );
+}
+
+function resizeWalk() {
+  if (!T) return;
+  const h = $('three');
+  const w = h.clientWidth || window.innerWidth;
+  const hh = h.clientHeight || (window.innerHeight - 49);
+  T.lastW = w; T.lastH = hh;
+  T.renderer.setSize(w, hh, false);
+  T.camera.aspect = w / Math.max(1, hh);
+  T.camera.updateProjectionMatrix();
+}
+
+function hint(t) { WK.hint = t; WK.hintUntil = performance.now() + 2400; }
+
+function leapForward(distMeters) {
+  const sH = Math.sin(WK.heading), cH = Math.cos(WK.heading);
+  const nx = clamp(WK.x + sH * distMeters, -HALF + 200, HALF - 200);
+  const ny = clamp(WK.y + cH * distMeters, -HALF + 200, HALF - 200);
+  if (slopeAt(nx, ny) > 15) {
+    hint('Slope ahead is over 15°. Turn slightly left or right to leap safely.');
+    return;
+  }
+  WK.glideTarget = { x: nx, y: ny };
+  playFootstep();
+}
+
+function updateWalker(dt) {
+  const K = WK.keys, D = WK.dpad;
+  const fwd = (K.w || K.ArrowUp || D.up ? 1 : 0) - (K.s || K.ArrowDown || D.down ? 1 : 0);
+  const side = (K.d ? 1 : 0) - (K.a ? 1 : 0);
+  const turn = (K.e || K.ArrowRight || D.right ? 1 : 0) - (K.q || K.ArrowLeft || D.left ? 1 : 0);
+
+  if (turn) WK.heading = (WK.heading + turn * 1.55 * dt + Math.PI * 2) % (Math.PI * 2);
+  if (fwd || side) WK.glideTarget = null;
+
+  let dx = 0, dy = 0, moving = false;
+
+  if (WK.glideTarget) {
+    const gx = WK.glideTarget.x - WK.x, gy = WK.glideTarget.y - WK.y;
+    const dist = Math.hypot(gx, gy);
+    if (dist < 0.6) {
+      WK.glideTarget = null;
+    } else {
+      const speed = Math.max(12, Math.min(95, dist * 3.2));
+      const step = Math.min(dist, speed * dt);
+      dx = (gx / dist) * step;
+      dy = (gy / dist) * step;
+      moving = true;
+    }
+  } else if (fwd || side) {
+    const run = !!K.Shift;
+    const mag = Math.hypot(fwd, side);
+    const f = fwd / mag, sd = side / mag;
+    const sH = Math.sin(WK.heading), cH = Math.cos(WK.heading);
+    const de = sH * f + cH * sd, dn = cH * f - sH * sd;
+    const speed = run ? 48 : 14;
+    dx = de * speed * dt;
+    dy = dn * speed * dt;
+    moving = true;
+  } else if (S.autoWalk && PROF.length > 1) {
+    const idx = nearestIdx(PROF, WK.x, WK.y);
+    const nextIdx = Math.min(PROF.length - 1, idx + 1);
+    const target = PROF[nextIdx];
+    const gx = target.x - WK.x, gy = target.y - WK.y;
+    const dist = Math.hypot(gx, gy);
+    if (dist > 1) {
+      const desiredH = Math.atan2(gx, gy);
+      let diff = ((desiredH - WK.heading + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+      WK.heading = (WK.heading + clamp(diff, -1.2 * dt, 1.2 * dt) + Math.PI * 2) % (Math.PI * 2);
+      const step = Math.min(dist, 16 * dt);
+      dx = (gx / dist) * step;
+      dy = (gy / dist) * step;
+      moving = true;
+    }
+  }
+
+  if (!moving) return;
+
+  const nx = clamp(WK.x + dx, -HALF + 200, HALF - 200);
+  const ny = clamp(WK.y + dy, -HALF + 200, HALF - 200);
+  const sN = slopeAt(nx, ny);
+  if (sN > 15) {
+    WK.glideTarget = null;
+    hint('Hazard: Slope ahead exceeds 15° NASA limit. Turn to bypass.');
+    return;
+  }
+  const realD = Math.hypot(nx - WK.x, ny - WK.y);
+  const prevBob = Math.floor(WK.bobPhase / Math.PI);
+  WK.bobPhase += realD * 0.55;
+  if (Math.floor(WK.bobPhase / Math.PI) !== prevBob) playFootstep();
+
+  const e = terrainOf(nx, ny, elev(nx, ny)).eta;
+  WK.air = Math.max(0, WK.air - airCost(realD, sN, e) * 0.25);
+  WK.walked += realD;
+  WK.x = nx; WK.y = ny;
+}
+
+function updateCameraAndChevron() {
+  const groundH = microElev(WK.x, WK.y);
+  const bob = Math.sin(WK.bobPhase) * 0.065;
+  const eyeH = groundH + (S.avatarMode ? 2.6 : 1.75) + bob;
+
+  const sH = Math.sin(WK.heading), cH = Math.cos(WK.heading);
+
+  if (S.avatarMode) {
+    T.avatar.visible = true;
+    const avX = WK.x + sH * 3.2, avY = WK.y + cH * 3.2;
+    const avH = microElev(avX, avY);
+    T.avatar.position.set(avX, avH, -avY);
+    T.avatar.rotation.y = -WK.heading;
+    T.legL.rotation.x = Math.sin(WK.bobPhase) * 0.45;
+    T.legR.rotation.x = -Math.sin(WK.bobPhase) * 0.45;
+  } else {
+    T.avatar.visible = false;
+  }
+
+  const cam = T.camera;
+  cam.position.set(WK.x, eyeH, -WK.y);
+  const cp = Math.cos(WK.pitch), sp = Math.sin(WK.pitch);
+  cam.lookAt(WK.x + sH * cp * 100, eyeH + sp * 100, -(WK.y + cH * cp * 100));
+
+  const chX = WK.x + sH * 7.5, chY = WK.y + cH * 7.5;
+  const chH = microElev(chX, chY) + 0.14;
+  T.forwardChevron.position.set(chX, chH, -chY);
+  T.forwardChevron.rotation.z = -WK.heading;
+
+  T.skyDome.position.set(WK.x, eyeH, -WK.y);
+}
+
+function update3DPins() {
+  if (!T || !window.THREE) return;
+  const mod = window.THREE;
+  const host = $('pinsOverlay');
+  if (!host.children.length) {
+    PLACES.forEach((p, i) => {
+      const el = document.createElement('div');
+      el.className = 'pin3d';
+      el.innerHTML =
+        '<div class="pin-card">' +
+          '<strong>' + p.name + '</strong>' +
+          '<span class="pin-dist">0.0 km</span>' +
+        '</div>' +
+        '<svg class="pin-drop" viewBox="0 0 24 30">' +
+          '<path d="M12 1C6.5 1 2 5.5 2 11c0 7.5 10 17.5 10 17.5S22 18.5 22 11c0-5.5-4.5-10-10-10z" fill="#EF4444" stroke="#FFFFFF" stroke-width="2"/>' +
+          '<circle cx="12" cy="11" r="3.5" fill="#FFFFFF"/>' +
+        '</svg>';
+      el.onclick = e => {
+        e.stopPropagation();
+        const d = Math.hypot(p.x - WK.x, p.y - WK.y);
+        if (d < 400) {
+          WK.glideTarget = { x: p.x, y: p.y };
+        } else {
+          jumpToPlace(i, false);
+        }
+      };
+      host.appendChild(el);
+    });
+  }
+
+  const W = T.lastW || window.innerWidth;
+  const H = T.lastH || (window.innerHeight - 49);
+  const camDir = new mod.Vector3();
+  T.camera.getWorldDirection(camDir);
+
+  Array.from(host.children).forEach((el, i) => {
+    const p = PLACES[i];
+    const distFromWalker = Math.hypot(p.x - WK.x, p.y - WK.y);
+    if (distFromWalker < 120) {
+      el.style.display = 'none';
+      return;
+    }
+    const dirX = (p.x - WK.x) / distFromWalker, dirY = (p.y - WK.y) / distFromWalker;
+    const projDist = Math.min(distFromWalker, 1150);
+    const wx = WK.x + dirX * projDist, wy = WK.y + dirY * projDist;
+    const wh = microElev(wx, wy) + 22 + Math.min(45, distFromWalker * 0.004);
+
+    const v = new mod.Vector3(wx, wh, -wy);
+    const toPin = v.clone().sub(T.camera.position).normalize();
+    if (camDir.dot(toPin) <= 0.12) {
+      el.style.display = 'none';
+      return;
+    }
+    v.project(T.camera);
+    const sx = (v.x * 0.5 + 0.5) * W;
+    const sy = (-v.y * 0.5 + 0.5) * H;
+    if (sx < 60 || sx > W - 60 || sy < 65 || sy > H - 180) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'flex';
+    el.style.left = sx + 'px';
+    el.style.top = sy + 'px';
+    const distFromBase = Math.hypot(p.x - BASE.x, p.y - BASE.y) / 1000;
+    el.querySelector('.pin-dist').textContent = distFromBase.toFixed(1) + ' km from base';
+  });
+}
+
+function compass(h) {
+  const d = ((h * R2D) % 360 + 360) % 360;
+  const n = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  return Math.round(d) % 360 + '\u00B0 ' + n[Math.round(d / 45) % 8];
+}
+
+function updateHud() {
+  const h = elev(WK.x, WK.y), s = slopeAt(WK.x, WK.y), t = terrainOf(WK.x, WK.y, h);
+  const db = Math.hypot(WK.x - BASE.x, WK.y - BASE.y);
+
+  let nearIdx = 0, nd = Infinity;
+  PLACES.forEach((p, i) => {
+    const d = Math.hypot(p.x - WK.x, p.y - WK.y);
+    if (d < nd) { nd = d; nearIdx = i; }
+  });
+  const near = PLACES[nearIdx];
+  const nextPlace = PLACES[Math.min(PLACES.length - 1, nearIdx + 1)];
+  const distToNext = Math.hypot(nextPlace.x - WK.x, nextPlace.y - WK.y) / 1000;
+
+  $('wTitle').textContent = near.sub || near.name;
+  $('wSubTitle').textContent = nearIdx < PLACES.length - 1
+    ? 'Mars Walk \u00B7 ' + distToNext.toFixed(1) + ' km to ' + nextPlace.name
+    : 'Mars Walk \u00B7 Upper Mount Sharp Study Zone';
+
+  const molaElev = Math.round(BASE_DATUM + h);
+  const aboveBase = Math.round(h - elev(BASE.x, BASE.y));
+  $('hElev').textContent = molaElev.toLocaleString() + ' meters';
+  $('hElevSub').textContent = (aboveBase >= 0 ? '+' : '') + aboveBase + 'm above Base Camp';
+
+  const walkHrs = (db / 1000) / (s > 10 ? 1.2 : 3.0);
+  $('hDist').textContent = (db / 1000).toFixed(1) + ' km';
+  $('hDistSub').textContent = '~' + fmtH(walkHrs) + ' walk';
+
+  // Directional Slope & Slope Hazard Coloring
+  const dirSlope = directionalSlopeAt(WK.x, WK.y, WK.heading);
+  const dirWord = Math.abs(dirSlope) < 0.8 ? 'Flat' : dirSlope > 0 ? 'Uphill' : 'Downhill';
+  const slopeColor = s > 15 ? '#EF4444' : s > 10 ? '#F59E0B' : '#22C55E';
+  const slopeStatus = s > 15 ? '⛔ EXCEEDS 15°' : s > 10 ? '⚠️ CAUTION' : '✔ SAFE (<10°)';
+  $('hSlope').innerHTML = `<span style="color:${slopeColor}">${s.toFixed(1)}° (${dirSlope >= 0 ? '+' : ''}${dirSlope.toFixed(1)}° ${dirWord})</span>`;
+  $('hTerr').innerHTML = `${t.name} · <b style="color:${slopeColor}">${slopeStatus}</b>`;
+
+  $('hHead').textContent = compass(WK.heading);
+
+  const tempC = Math.round(-58 + 26 * Math.sin(Math.max(0, S.sunEl) * D2R) - h * 0.004);
+  const need = airCost(db, 4, 1.15) * 0.35;
+  const reserveOk = (WK.air - need) >= RESERVE;
+  $('hWeather').textContent = tempC + '\u00B0C \u00B7 O2 ' + WK.air.toFixed(0) + '%';
+  const skyDesc = S.tau < 0.8 ? 'Clear sky \u00B7 Light red haze' : S.tau < 1.6 ? 'Moderate dust haze' : 'Heavy dust storm';
+  $('hBack').textContent = reserveOk ? skyDesc : 'LOW MARGIN \u00B7 Return to base';
+  $('compassDot').className = 'dot' + (reserveOk ? ' ok' : '');
+
+  // Lookahead slope hazard detection (14m ahead)
+  const lookaheadDist = 14;
+  const sH = Math.sin(WK.heading), cH = Math.cos(WK.heading);
+  const aheadX = WK.x + sH * lookaheadDist, aheadY = WK.y + cH * lookaheadDist;
+  const aheadSlope = slopeAt(aheadX, aheadY);
+
+  const alarmEl = $('alarm');
+  if (aheadSlope > 15) {
+    alarmEl.hidden = false;
+    alarmEl.className = 'alarm steep-alarm';
+    alarmEl.textContent = `⚠️ STEEP SLOPE AHEAD: +${aheadSlope.toFixed(1)}° (EXCEEDS 15° NASA SUIT LIMIT) · TURN TO DIVERT`;
+  } else if (!reserveOk) {
+    alarmEl.hidden = false;
+    alarmEl.className = 'alarm';
+    alarmEl.textContent = 'ABORT EVA · Return to Base Camp now. Remaining O2 has reached Walkback + 45-minute reserve.';
+  } else {
+    alarmEl.hidden = true;
+  }
+
+  $('walkHint').textContent = performance.now() < WK.hintUntil ? WK.hint : '';
+}
+
+function walkLoop(now) {
+  if (!walkRunning || !T) return;
+  const host = $('three');
+  const w = host.clientWidth || window.innerWidth;
+  const hh = host.clientHeight || (window.innerHeight - 49);
+  if (T.lastW !== w || T.lastH !== hh) {
+    resizeWalk();
+  }
+
+  const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+  updateWalker(dt);
+  if (Math.hypot(WK.x - T.patchC.x, WK.y - T.patchC.y) > 220) rebuildPatch();
+  updateCameraAndChevron();
+  update3DPins();
+  T.renderer.render(T.scene, T.camera);
+  if (now - lastHud > 120) {
+    lastHud = now;
+    updateHud();
+    drawMini();
+    drawWalkElev();
+    updatePills();
+  }
+  requestAnimationFrame(walkLoop);
+}
+
+function enterWalk() {
+  if (!WK.ready) {
+    const p = PLACES[S.sel] || PLACES[3];
+    WK.x = p.x; WK.y = p.y;
+    const nextP = PLACES[Math.min(PLACES.length - 1, S.sel + 1)];
+    WK.heading = nextP !== p ? Math.atan2(nextP.x - p.x, nextP.y - p.y) : 200 * D2R;
+    WK.pitch = -0.05;
+    WK.ready = true;
+  }
+  try {
+    initThreeScene();
+  } catch (e) {
+    console.error(e);
+    notice('3D engine could not start. Check your internet connection.');
+    return;
+  }
+  resizeWalk();
+  rebuildPatch();
+  buildRouteVisual();
+  updateSky();
+  updateHud();
+  drawMini();
+  drawWalkElev();
+  if (!walkRunning) {
+    walkRunning = true;
+    lastT = performance.now(); lastHud = 0;
+    requestAnimationFrame(walkLoop);
+  }
+}
+
+/* ================= MOUNT SHARP 3D ELEVATION & ORBIT EXPLORER ================= */
+const ORBIT = {
+  ready: false,
+  running: false,
+  scene: null,
+  camera: null,
+  renderer: null,
+  terrainMesh: null,
+  routeMesh: null,
+  markersGroup: null,
+  shadingMode: 'mola', // 'mola' or 'slope'
+  exaggeration: 1.6,
+  radius: 36000,
+  theta: 0.65,
+  phi: 0.95,
+  target: null,
+  downPt: null,
+  dragged: false,
+  isRightDrag: false,
+  lastW: 0,
+  lastH: 0
+};
+
+function orbitVertexColor(x, y, h, s, mode) {
+  if (mode === 'slope') {
+    if (s > 15) return [0.92, 0.15, 0.15];
+    if (s > 10) return [0.95, 0.65, 0.10];
+    return [0.15, 0.72, 0.35];
+  }
+  // MOLA Elevation Altimetry color ramp
+  if (h <= 200) return mix3([0.15, 0.40, 0.85], [0.15, 0.75, 0.85], clamp(h / 200, 0, 1));
+  if (h <= 800) return mix3([0.15, 0.75, 0.85], [0.25, 0.80, 0.35], clamp((h - 200) / 600, 0, 1));
+  if (h <= 1600) return mix3([0.25, 0.80, 0.35], [0.85, 0.85, 0.20], clamp((h - 800) / 800, 0, 1));
+  if (h <= 2400) return mix3([0.85, 0.85, 0.20], [0.92, 0.50, 0.15], clamp((h - 1600) / 800, 0, 1));
+  if (h <= 3200) return mix3([0.92, 0.50, 0.15], [0.80, 0.20, 0.35], clamp((h - 2400) / 800, 0, 1));
+  return mix3([0.80, 0.20, 0.35], [0.98, 0.95, 0.95], clamp((h - 3200) / 1000, 0, 1));
+}
+
+function initOrbitScene() {
+  if (ORBIT.scene) return;
+  const mod = window.THREE;
+  if (!mod) return;
+
+  const host = $('orbitThree');
+  const w = host.clientWidth || window.innerWidth;
+  const h = host.clientHeight || (window.innerHeight - 49);
+  ORBIT.lastW = w; ORBIT.lastH = h;
+  ORBIT.target = new mod.Vector3(0, 600, 0);
+
+  const renderer = new mod.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  renderer.setSize(w, h, false);
+  renderer.domElement.style.width = '100%';
+  renderer.domElement.style.height = '100%';
+  renderer.domElement.style.display = 'block';
+  host.innerHTML = '';
+  host.appendChild(renderer.domElement);
+
+  const scene = new mod.Scene();
+  scene.background = new mod.Color(0x120d09);
+  scene.fog = new mod.FogExp2(0x1a120c, 0.000015);
+
+  const camera = new mod.PerspectiveCamera(45, w / Math.max(1, h), 10, 180000);
+
+  const hemi = new mod.HemisphereLight(0xffeedd, 0x3d2010, 0.85);
+  const dirLight = new mod.DirectionalLight(0xfff5e6, 1.4);
+  dirLight.position.set(25000, 35000, 20000);
+  scene.add(hemi, dirLight);
+
+  // Stars background
+  const starGeo = new mod.BufferGeometry();
+  const starPos = [];
+  for (let i = 0; i < 900; i++) {
+    const v = new mod.Vector3(
+      (Math.random() - 0.5) * 160000,
+      Math.random() * 80000 + 5000,
+      (Math.random() - 0.5) * 160000
+    );
+    starPos.push(v.x, v.y, v.z);
+  }
+  starGeo.setAttribute('position', new mod.Float32BufferAttribute(starPos, 3));
+  const starMat = new mod.PointsMaterial({ color: 0xffeedd, size: 2.5, transparent: true, opacity: 0.75 });
+  scene.add(new mod.Points(starGeo, starMat));
+
+  const markersGroup = new mod.Group();
+  scene.add(markersGroup);
+
+  ORBIT.scene = scene;
+  ORBIT.camera = camera;
+  ORBIT.renderer = renderer;
+  ORBIT.markersGroup = markersGroup;
+
+  buildOrbitTerrain();
+  buildOrbitRoute();
+  renderOrbitChips();
+  updateOrbitCamera();
+
+  // Pointer controls
+  host.addEventListener('pointerdown', e => {
+    ORBIT.downPt = { x: e.clientX, y: e.clientY };
+    ORBIT.dragged = false;
+    ORBIT.isRightDrag = (e.button === 2 || e.shiftKey);
+    host.setPointerCapture(e.pointerId);
+  });
+  host.addEventListener('pointermove', e => {
+    if (!ORBIT.downPt) return;
+    const dx = e.clientX - ORBIT.downPt.x, dy = e.clientY - ORBIT.downPt.y;
+    if (Math.hypot(dx, dy) > 3) ORBIT.dragged = true;
+    ORBIT.downPt = { x: e.clientX, y: e.clientY };
+
+    if (ORBIT.isRightDrag) {
+      // Pan target
+      const panSpeed = ORBIT.radius * 0.0012;
+      const sT = Math.sin(ORBIT.theta), cT = Math.cos(ORBIT.theta);
+      ORBIT.target.x -= (cT * dx - sT * dy) * panSpeed;
+      ORBIT.target.z -= (-sT * dx - cT * dy) * panSpeed;
+    } else {
+      // Orbit
+      ORBIT.theta -= dx * 0.0055;
+      ORBIT.phi = clamp(ORBIT.phi - dy * 0.0045, 0.08, Math.PI / 2 - 0.03);
+    }
+    updateOrbitCamera();
+  });
+  const endDrag = () => { ORBIT.downPt = null; };
+  host.addEventListener('pointerup', endDrag);
+  host.addEventListener('pointercancel', endDrag);
+  host.addEventListener('contextmenu', e => e.preventDefault());
+
+  host.addEventListener('wheel', e => {
+    e.preventDefault();
+    ORBIT.radius = clamp(ORBIT.radius + e.deltaY * 26, 4500, 110000);
+    updateOrbitCamera();
+  }, { passive: false });
+}
+
+function updateOrbitCamera() {
+  if (!ORBIT.camera || !ORBIT.target) return;
+  const sinP = Math.sin(ORBIT.phi), cosP = Math.cos(ORBIT.phi);
+  const sinT = Math.sin(ORBIT.theta), cosT = Math.cos(ORBIT.theta);
+  ORBIT.camera.position.set(
+    ORBIT.target.x + ORBIT.radius * sinP * sinT,
+    ORBIT.target.y + ORBIT.radius * cosP,
+    ORBIT.target.z + ORBIT.radius * sinP * cosT
+  );
+  ORBIT.camera.lookAt(ORBIT.target);
+}
+
+function buildOrbitTerrain() {
+  if (!ORBIT.scene) return;
+  const mod = window.THREE;
+  const N = NG;
+  const pos = new Float32Array(N * N * 3);
+  const col = new Float32Array(N * N * 3);
+  const idx = [];
+
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const x = -HALF + i * STEP;
+      const y = -HALF + j * STEP;
+      const k = j * N + i;
+      const h = gH[k];
+      const s = gS[k];
+      const c = orbitVertexColor(x, y, h, s, ORBIT.shadingMode);
+
+      const k3 = k * 3;
+      pos[k3] = x;
+      pos[k3 + 1] = h * ORBIT.exaggeration;
+      pos[k3 + 2] = -y;
+
+      col[k3] = c[0];
+      col[k3 + 1] = c[1];
+      col[k3 + 2] = c[2];
+    }
+  }
+
+  for (let j = 0; j < N - 1; j++) {
+    for (let i = 0; i < N - 1; i++) {
+      const a = j * N + i, b = a + 1, c = a + N, d = c + 1;
+      idx.push(a, b, c, b, d, c);
+    }
+  }
+
+  const geo = new mod.BufferGeometry();
+  geo.setAttribute('position', new mod.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new mod.BufferAttribute(col, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+
+  if (ORBIT.terrainMesh) {
+    ORBIT.terrainMesh.geometry.dispose();
+    ORBIT.terrainMesh.geometry = geo;
+  } else {
+    const mat = new mod.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.82,
+      metalness: 0.08,
+      flatShading: false
+    });
+    ORBIT.terrainMesh = new mod.Mesh(geo, mat);
+    ORBIT.scene.add(ORBIT.terrainMesh);
+  }
+
+  rebuildOrbitMarkers();
+}
+
+function updateOrbitExaggeration(val) {
+  ORBIT.exaggeration = val;
+  $('lblExaggeration').textContent = val.toFixed(1) + '\u00D7';
+  $('valExaggeration').textContent = val.toFixed(1) + '\u00D7';
+  $('sliderExaggeration').value = val;
+
+  if (ORBIT.terrainMesh) {
+    const pos = ORBIT.terrainMesh.geometry.attributes.position.array;
+    const N = NG;
+    for (let k = 0; k < N * N; k++) {
+      pos[k * 3 + 1] = gH[k] * val;
+    }
+    ORBIT.terrainMesh.geometry.attributes.position.needsUpdate = true;
+    ORBIT.terrainMesh.geometry.computeVertexNormals();
+  }
+
+  rebuildOrbitMarkers();
+  buildOrbitRoute();
+}
+
+function setOrbitShading(mode) {
+  ORBIT.shadingMode = mode;
+  $('btnOrbitShading').textContent = mode === 'mola' ? 'Shading: MOLA Height' : 'Shading: Slope Hazards';
+  $('btnOrbitShading').classList.toggle('active', mode === 'mola');
+
+  if (ORBIT.terrainMesh) {
+    const col = ORBIT.terrainMesh.geometry.attributes.color.array;
+    const N = NG;
+    for (let j = 0; j < N; j++) {
+      for (let i = 0; i < N; i++) {
+        const x = -HALF + i * STEP;
+        const y = -HALF + j * STEP;
+        const k = j * N + i;
+        const c = orbitVertexColor(x, y, gH[k], gS[k], mode);
+        col[k * 3] = c[0];
+        col[k * 3 + 1] = c[1];
+        col[k * 3 + 2] = c[2];
+      }
+    }
+    ORBIT.terrainMesh.geometry.attributes.color.needsUpdate = true;
+  }
+}
+
+function rebuildOrbitMarkers() {
+  if (!ORBIT.markersGroup) return;
+  const mod = window.THREE;
+  while (ORBIT.markersGroup.children.length) {
+    const ch = ORBIT.markersGroup.children[0];
+    if (ch.geometry) ch.geometry.dispose();
+    ORBIT.markersGroup.remove(ch);
+  }
+
+  PLACES.forEach((p, i) => {
+    const py = elev(p.x, p.y) * ORBIT.exaggeration;
+    // Light beam column
+    const colGeo = new mod.CylinderGeometry(20, 20, 1100, 16);
+    const colMat = new mod.MeshBasicMaterial({
+      color: i === 0 ? 0x3B82F6 : i === 3 ? 0x10B981 : 0xE07020,
+      transparent: true,
+      opacity: 0.65
+    });
+    const col = new mod.Mesh(colGeo, colMat);
+    col.position.set(p.x, py + 550, -p.y);
+    ORBIT.markersGroup.add(col);
+
+    // Glowing Sphere
+    const sphGeo = new mod.SphereGeometry(140, 16, 16);
+    const sphMat = new mod.MeshStandardMaterial({
+      color: i === 0 ? 0x60A5FA : i === 3 ? 0x34D399 : 0xFBBF24,
+      emissive: i === 0 ? 0x1E40AF : i === 3 ? 0x065F46 : 0xB45309,
+      roughness: 0.3
+    });
+    const sph = new mod.Mesh(sphGeo, sphMat);
+    sph.position.set(p.x, py + 1100, -p.y);
+    ORBIT.markersGroup.add(sph);
+  });
+}
+
+function buildOrbitRoute() {
+  if (!ORBIT.scene) return;
+  const mod = window.THREE;
+  if (ORBIT.routeMesh) {
+    ORBIT.scene.remove(ORBIT.routeMesh);
+    if (ORBIT.routeMesh.geometry) ORBIT.routeMesh.geometry.dispose();
+    ORBIT.routeMesh = null;
+  }
+  const pts = ROUTE.pts;
+  if (pts.length < 2) return;
+
+  const points3D = pts.map(p => new mod.Vector3(p.x, elev(p.x, p.y) * ORBIT.exaggeration + 55, -p.y));
+  const curve = new mod.CatmullRomCurve3(points3D);
+  const tubeGeo = new mod.TubeGeometry(curve, Math.min(pts.length * 4, 300), 45, 8, false);
+  const tubeMat = new mod.MeshBasicMaterial({ color: 0x00F0FF });
+  ORBIT.routeMesh = new mod.Mesh(tubeGeo, tubeMat);
+  ORBIT.scene.add(ORBIT.routeMesh);
+}
+
+function orbitCameraPreset(type) {
+  if (type === 'gale') {
+    ORBIT.target.set(0, 600, 0);
+    ORBIT.theta = 0.65;
+    ORBIT.phi = 0.95;
+    ORBIT.radius = 36000;
+  } else if (type === 'boxwork') {
+    const bw = PLACES[3];
+    ORBIT.target.set(bw.x, elev(bw.x, bw.y) * ORBIT.exaggeration, -bw.y);
+    ORBIT.theta = 0.85;
+    ORBIT.phi = 1.15;
+    ORBIT.radius = 11000;
+  } else if (type === 'top') {
+    ORBIT.target.set(0, 400, 0);
+    ORBIT.theta = 0;
+    ORBIT.phi = 0.08;
+    ORBIT.radius = 48000;
+  }
+  updateOrbitCamera();
+}
+
+function updateOrbitPins() {
+  if (!ORBIT.camera || !ORBIT.scene) return;
+  const mod = window.THREE;
+  const host = $('orbitPinsOverlay');
+  if (!host.children.length) {
+    PLACES.forEach((p, i) => {
+      const el = document.createElement('div');
+      el.className = 'pin3d';
+      el.innerHTML =
+        '<div class="pin-card">' +
+          '<strong>' + p.name + '</strong>' +
+          '<span>' + Math.round(BASE_DATUM + elev(p.x, p.y)) + 'm · ' + p.short + '</span>' +
+        '</div>' +
+        '<svg class="pin-drop" viewBox="0 0 24 30">' +
+          '<path d="M12 1C6.5 1 2 5.5 2 11c0 7.5 10 17.5 10 17.5S22 18.5 22 11c0-5.5-4.5-10-10-10z" fill="' + (i === 0 ? '#3B82F6' : i === 3 ? '#10B981' : '#E07020') + '" stroke="#FFFFFF" stroke-width="2"/>' +
+          '<circle cx="12" cy="11" r="3.5" fill="#FFFFFF"/>' +
+        '</svg>';
+      el.onclick = e => {
+        e.stopPropagation();
+        ORBIT.target.set(p.x, elev(p.x, p.y) * ORBIT.exaggeration, -p.y);
+        ORBIT.radius = Math.min(ORBIT.radius, 14000);
+        updateOrbitCamera();
+        notice('Targeted ' + p.name + ' · Click "Walk in 3D" to land on surface.');
+      };
+      host.appendChild(el);
+    });
+  }
+
+  const W = ORBIT.lastW || window.innerWidth;
+  const H = ORBIT.lastH || (window.innerHeight - 49);
+  const camDir = new mod.Vector3();
+  ORBIT.camera.getWorldDirection(camDir);
+
+  Array.from(host.children).forEach((el, i) => {
+    const p = PLACES[i];
+    const py = elev(p.x, p.y) * ORBIT.exaggeration + 1150;
+    const v = new mod.Vector3(p.x, py, -p.y);
+    const toPin = v.clone().sub(ORBIT.camera.position).normalize();
+    if (camDir.dot(toPin) <= 0.1) {
+      el.style.display = 'none';
+      return;
+    }
+    v.project(ORBIT.camera);
+    const sx = (v.x * 0.5 + 0.5) * W;
+    const sy = (-v.y * 0.5 + 0.5) * H;
+    if (sx < 40 || sx > W - 40 || sy < 50 || sy > H - 80) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'flex';
+    el.style.left = sx + 'px';
+    el.style.top = sy + 'px';
+  });
+}
+
+function renderOrbitChips() {
+  const host = $('orbitChips');
+  if (!host) return;
+  host.innerHTML = '';
+  PLACES.forEach((p, i) => {
+    const b = document.createElement('button');
+    b.className = 'w-chip' + (S.sel === i ? ' on' : '');
+    b.textContent = p.name;
+    b.onclick = () => {
+      S.sel = i;
+      document.querySelectorAll('#orbitChips .w-chip').forEach((c, ci) => c.classList.toggle('on', ci === i));
+      ORBIT.target.set(p.x, elev(p.x, p.y) * ORBIT.exaggeration, -p.y);
+      ORBIT.radius = 12000;
+      updateOrbitCamera();
+    };
+    host.appendChild(b);
+  });
+}
+
+function orbitLoop() {
+  if (!ORBIT.running || !ORBIT.scene) return;
+  const host = $('orbitThree');
+  const w = host.clientWidth || window.innerWidth;
+  const hh = host.clientHeight || (window.innerHeight - 49);
+  if (ORBIT.lastW !== w || ORBIT.lastH !== hh) {
+    ORBIT.lastW = w; ORBIT.lastH = hh;
+    ORBIT.renderer.setSize(w, hh, false);
+    ORBIT.camera.aspect = w / Math.max(1, hh);
+    ORBIT.camera.updateProjectionMatrix();
+  }
+  updateOrbitPins();
+  ORBIT.renderer.render(ORBIT.scene, ORBIT.camera);
+  requestAnimationFrame(orbitLoop);
+}
+
+function enterOrbit() {
+  try {
+    initOrbitScene();
+  } catch (e) {
+    console.error(e);
+    notice('3D Orbit engine could not start.');
+    return;
+  }
+  buildOrbitRoute();
+  renderOrbitChips();
+  if (!ORBIT.running) {
+    ORBIT.running = true;
+    requestAnimationFrame(orbitLoop);
+  }
+}
+
+function setMode(m) {
+  S.mode = m;
+  $('walkView').hidden = m !== 'walk';
+  if ($('orbitView')) $('orbitView').hidden = m !== 'orbit';
+  document.querySelectorAll('.modes [data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  if (m === 'walk') {
+    ORBIT.running = false;
+    enterWalk();
+  } else if (m === 'orbit') {
+    walkRunning = false;
+    enterOrbit();
+  } else {
+    walkRunning = false;
+    ORBIT.running = false;
+    if (map) setTimeout(() => map.invalidateSize(), 50);
+    drawProfile();
+  }
+  updatePills();
+}
+
+function jumpToPlace(i, open3D) {
+  S.sel = i;
+  const p = PLACES[i];
+  const nextP = PLACES[Math.min(PLACES.length - 1, i + 1)];
+  WK.x = p.x; WK.y = p.y;
+  WK.glideTarget = null;
+  WK.heading = nextP !== p ? Math.atan2(nextP.x - p.x, nextP.y - p.y) : 200 * D2R;
+  WK.ready = true;
+  renderPlaces();
+  renderWalkChips();
+  renderPlaceCard();
+  if (T) rebuildPatch();
+  if (S.panoSky) applyPanoSky();
+  drawProfile();
+  drawMini();
+  drawWalkElev();
+  if (open3D && S.mode !== 'walk') setMode('walk');
+}
+
+function setWalkerIdx(idx) {
+  if (!PROF.length) return;
+  const p = PROF[clamp(idx, 0, PROF.length - 1)];
+  WK.x = p.x; WK.y = p.y; WK.glideTarget = null; WK.ready = true;
+  if (T && Math.hypot(WK.x - T.patchC.x, WK.y - T.patchC.y) > 220) rebuildPatch();
+  if (S.mode === 'walk') updateHud();
+  drawProfile(); drawMini(); drawWalkElev();
+}
+
+/* ================= SUNLIGHT & TIME OF DAY ================= */
+function syncTimeToSunEl(tod) {
+  S.tod = tod;
+  S.sunEl = Math.round(Math.sin(Math.PI * (tod - 6) / 12) * 52);
+  let h = Math.floor(S.tod), m = Math.round((S.tod - h) * 60);
+  if (m === 60) { h = (h + 1) % 24; m = 0; }
+  $('tod').value = S.tod;
+  $('todLabel').textContent = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') +
+    (S.sunEl > 0 ? ', sun ' + S.sunEl + '\u00B0 up' : ', sun below horizon');
+  document.querySelectorAll('.w-preset').forEach(b => b.classList.toggle('on', Math.abs(+b.dataset.time - tod) < 0.2));
+  updateSky();
+}
+
+/* ================= BOOT & INTRO ================= */
+let booted = false;
+function boot() {
+  if (booted) return;
+  booted = true;
+  loadDefaultGaleRoute();
+  safe(initMap);
+  safe(renderPlaces);
+  safe(renderWalkChips);
+  safe(() => selectPlace(3));
+  safe(() => setLayer(S.layer));
+  safe(() => syncTimeToSunEl(15));
+  safe(rebuildRoute);
+  safe(updatePills);
+  safe(renderChecklist);
+  // Start in 3D Street View immediately so the screen is vibrant and interactive right away
+  safe(() => setMode('walk'));
+}
+
+const introC = $('introCanvas'), ictx = introC.getContext('2d');
+const STARS = Array.from({ length: 120 }, () => ({
+  x: Math.random(), y: Math.random(), r: Math.random() * 1.6 + 0.4, a: Math.random() * 0.6 + 0.3, p: Math.random() * 6
+}));
+let introRAF = 0, introTimer = null, introDone = false;
+const stepTimers = [];
+const LOAD = [
+  'Loading Gale Crater & Mount Sharp DEM',
+  'Streaming NASA Mars Trek orbital layers',
+  'Generating 3D Martian ripples & boulders',
+  'Checking NASA HRP 15° slope & O2 rules'
+];
+function drawIntro(now) {
+  const W = introC.width, H = introC.height, cx = W / 2, cy = H / 2, GR = 175;
+  ictx.clearRect(0, 0, W, H);
+  for (const s of STARS) {
+    ictx.globalAlpha = s.a * (0.6 + 0.4 * Math.sin(now / 700 + s.p));
+    ictx.fillStyle = '#F3EADB';
+    ictx.fillRect(s.x * W, s.y * H, s.r, s.r);
+  }
+  ictx.globalAlpha = 1;
+  const halo = ictx.createRadialGradient(cx, cy, GR * 0.9, cx, cy, GR * 1.35);
+  halo.addColorStop(0, 'rgba(195,132,26,0.35)');
+  halo.addColorStop(1, 'rgba(195,132,26,0)');
+  ictx.fillStyle = halo;
+  ictx.beginPath(); ictx.arc(cx, cy, GR * 1.35, 0, Math.PI * 2); ictx.fill();
+  const gr = ictx.createRadialGradient(cx - GR * 0.35, cy - GR * 0.35, GR * 0.1, cx, cy, GR);
+  gr.addColorStop(0, '#B0461C'); gr.addColorStop(0.6, '#6B2A14'); gr.addColorStop(1, '#241A10');
+  ictx.fillStyle = gr;
+  ictx.beginPath(); ictx.arc(cx, cy, GR, 0, Math.PI * 2); ictx.fill();
+  const a = now / 3200;
+  const P = (lat, lon) => {
+    const la = lat * D2R, lo = lon * D2R + a;
+    return { x: cx + GR * Math.cos(la) * Math.sin(lo), y: cy - GR * Math.sin(la), z: Math.cos(la) * Math.cos(lo) };
+  };
+  const seg = pts => {
+    ictx.beginPath(); let pen = false;
+    for (const p of pts) {
+      if (p.z > 0) { if (!pen) { ictx.moveTo(p.x, p.y); pen = true; } else ictx.lineTo(p.x, p.y); }
+      else pen = false;
+    }
+    ictx.stroke();
+  };
+  ictx.lineWidth = 2.2; ictx.strokeStyle = 'rgba(233,217,184,0.45)';
+  for (let lo = 0; lo < 360; lo += 30) { const pts = []; for (let la = -90; la <= 90; la += 5) pts.push(P(la, lo)); seg(pts); }
+  for (let la = -60; la <= 60; la += 30) { const pts = []; for (let lo = 0; lo <= 360; lo += 6) pts.push(P(la, lo)); seg(pts); }
+  ictx.save();
+  ictx.translate(cx, cy);
+  ictx.rotate(now / 2200);
+  ictx.strokeStyle = '#C3841A'; ictx.lineWidth = 4;
+  ictx.beginPath(); ictx.ellipse(0, 0, GR * 1.22, GR * 0.38, 0, 0, Math.PI * 2); ictx.stroke();
+  ictx.restore();
+  introRAF = requestAnimationFrame(drawIntro);
+}
+function startIntro() {
+  introRAF = requestAnimationFrame(drawIntro);
+  LOAD.forEach((t, i) => stepTimers.push(setTimeout(() => {
+    const li = document.createElement('li');
+    const s1 = document.createElement('span'); s1.textContent = t;
+    const s2 = document.createElement('span'); s2.className = 'dim'; s2.textContent = 'done';
+    li.appendChild(s1); li.appendChild(s2);
+    $('loadList').appendChild(li);
+  }, 250 + i * 350)));
+  setTimeout(() => { $('barFill').style.width = '100%'; }, 40);
+  introTimer = setTimeout(finishIntro, 1850);
+}
+function finishIntro() {
+  if (introDone) return;
+  introDone = true;
+  clearTimeout(introTimer);
+  stepTimers.forEach(clearTimeout);
+  cancelAnimationFrame(introRAF);
+  $('intro').hidden = true;
+  boot();
+}
+
+/* ================= EVENTS ================= */
+function bindEvents() {
+  $('skipIntro').onclick = finishIntro;
+  $('guideOk').onclick = () => { $('guide').hidden = true; setMode('map'); };
+  $('guideWalkNow').onclick = () => { $('guide').hidden = true; setMode('walk'); };
+  $('howBtn').onclick = () => { $('guide').hidden = false; };
+
+  document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+  $('backMap').onclick = () => setMode('map');
+  document.querySelectorAll('[data-layer]').forEach(b => b.onclick = () => setLayer(b.dataset.layer));
+
+  $('modeSafe').onclick = () => setRouteMode('safe');
+  $('modeStraight').onclick = () => setRouteMode('straight');
+  $('addStops').onchange = e => { S.addStops = e.target.checked; };
+  $('resetDefaultRoute').onclick = () => { loadDefaultGaleRoute(); rebuildRoute(); notice('Loaded full 5-stop Gale Crater route.'); };
+  $('clearRoute').onclick = () => { ROUTE.stops = []; rebuildRoute(); };
+
+  $('walkRoute').onclick = () => {
+    if (!ROUTE.stops.length) {
+      const targetIdx = S.sel > 0 ? S.sel : 3;
+      addPlace(targetIdx);
+    }
+    jumpToPlace(S.sel, true);
+  };
+  $('walkPlace').onclick = () => jumpToPlace(S.sel, true);
+  $('addPlace').onclick = () => addPlace(S.sel);
+  $('search').addEventListener('input', renderPlaces);
+
+  $('tod').addEventListener('input', e => syncTimeToSunEl(+e.target.value));
+  document.querySelectorAll('[data-time]').forEach(b => b.onclick = () => syncTimeToSunEl(+b.dataset.time));
+  $('wSunSlider').addEventListener('input', e => {
+    S.sunEl = +e.target.value;
+    updateSky();
+  });
+  $('wTauSlider').addEventListener('input', e => {
+    S.tau = +e.target.value;
+    updateSky();
+  });
+  $('tau').addEventListener('input', e => {
+    S.tau = +e.target.value;
+    updateSky();
+  });
+
+  $('btnAutoWalk').onclick = () => {
+    S.autoWalk = !S.autoWalk;
+    $('btnAutoWalk').textContent = 'Walk Mode: ' + (S.autoWalk ? 'AUTO' : 'ON');
+    $('btnAutoWalk').classList.toggle('active', S.autoWalk);
+    if (S.autoWalk) notice('Auto-Walk enabled along the Mount Sharp climb.');
+  };
+  $('btnAudio').onclick = toggleAudio;
+  $('btnAvatar').onclick = () => {
+    S.avatarMode = !S.avatarMode;
+    $('btnAvatar').classList.toggle('active', S.avatarMode);
+    $('btnAvatar').textContent = S.avatarMode ? 'Mode: 3D Avatar (ON)' : 'Mode: 3D Avatar';
+  };
+  $('tabRoute').onclick = () => {
+    S.panoSky = false;
+    $('tabRoute').classList.add('on');
+    $('tabPano').classList.remove('on');
+    applyPanoSky();
+  };
+  $('tabPano').onclick = () => {
+    S.panoSky = !S.panoSky;
+    $('tabPano').classList.toggle('on', S.panoSky);
+    $('tabRoute').classList.toggle('on', !S.panoSky);
+    applyPanoSky();
+  };
+
+  document.querySelectorAll('[data-dpad]').forEach(b => {
+    const dir = b.dataset.dpad;
+    const start = e => { e.preventDefault(); WK.dpad[dir] = true; };
+    const end = () => { delete WK.dpad[dir]; };
+    b.addEventListener('pointerdown', start);
+    b.addEventListener('pointerup', end);
+    b.addEventListener('pointerleave', end);
+    b.addEventListener('pointercancel', end);
+  });
+  $('btnLeap').onclick = () => leapForward(220);
+
+  $('sheetToggle').onclick = () => {
+    const sh = $('sheet');
+    sh.classList.toggle('collapsed');
+    $('sheetToggle').textContent = sh.classList.contains('collapsed') ? 'Show panel' : 'Hide panel';
+    drawProfile();
+  };
+
+  // Slope Hazard Heatmap toggle in Street View
+  const btnSlopeHeat = $('btnSlopeHeat');
+  if (btnSlopeHeat) {
+    btnSlopeHeat.onclick = () => {
+      S.slopeHeatmap = !S.slopeHeatmap;
+      btnSlopeHeat.textContent = 'Slope Heatmap: ' + (S.slopeHeatmap ? 'ON' : 'OFF');
+      btnSlopeHeat.classList.toggle('active', S.slopeHeatmap);
+      rebuildPatch();
+      notice('Slope Hazard Heatmap ' + (S.slopeHeatmap ? 'ENABLED (<10° Safe, 10°-15° Caution, >15° Hazard)' : 'DISABLED'));
+    };
+  }
+
+  // Mount Sharp 3D Orbit Controls
+  const backFromOrbit = $('backFromOrbit');
+  if (backFromOrbit) backFromOrbit.onclick = () => setMode('map');
+
+  const btnOrbitShading = $('btnOrbitShading');
+  if (btnOrbitShading) {
+    btnOrbitShading.onclick = () => {
+      setOrbitShading(ORBIT.shadingMode === 'mola' ? 'slope' : 'mola');
+    };
+  }
+
+  const sliderEx = $('sliderExaggeration');
+  if (sliderEx) {
+    sliderEx.addEventListener('input', e => updateOrbitExaggeration(+e.target.value));
+  }
+
+  const btnCamGale = $('btnCamGale');
+  if (btnCamGale) btnCamGale.onclick = () => orbitCameraPreset('gale');
+  const btnCamBoxwork = $('btnCamBoxwork');
+  if (btnCamBoxwork) btnCamBoxwork.onclick = () => orbitCameraPreset('boxwork');
+  const btnCamTop = $('btnCamTop');
+  if (btnCamTop) btnCamTop.onclick = () => orbitCameraPreset('top');
+  const btnOrbitReset = $('btnOrbitReset');
+  if (btnOrbitReset) btnOrbitReset.onclick = () => orbitCameraPreset('gale');
+
+  // NASA JPL Mars Trek Portal Launchers
+  const openMarsTrek = (lat, lon) => {
+    const url = 'https://trek.nasa.gov/mars/#v=0.1&x=' + lon.toFixed(4) + '&y=' + lat.toFixed(4) + '&z=10&p=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A104905';
+    window.open(url, '_blank');
+  };
+  const btnMarsTrekTop = $('btnMarsTrekTop');
+  if (btnMarsTrekTop) btnMarsTrekTop.onclick = () => openMarsTrek(PLACES[3].lat, PLACES[3].lon);
+  const btnOrbitMarsTrek = $('btnOrbitMarsTrek');
+  if (btnOrbitMarsTrek) btnOrbitMarsTrek.onclick = () => openMarsTrek(PLACES[3].lat, PLACES[3].lon);
+
+  const scrubProfile = (canvas, clientX) => {
+    const r = canvas.getBoundingClientRect();
+    const f = clamp((clientX - r.left) / Math.max(1, r.width), 0, 1);
+    const pts = PROF;
+    if (!pts || pts.length < 2) return;
+    const total = pts[pts.length - 1].d || 0;
+    let idx = pts.findIndex(p => (p.d || 0) >= f * total);
+    if (idx < 0) idx = pts.length - 1;
+    setWalkerIdx(idx);
+  };
+  $('profile').addEventListener('click', e => scrubProfile($('profile'), e.clientX));
+
+  let scrubbingElev = false;
+  $('wElevCanvas').addEventListener('pointerdown', e => {
+    scrubbingElev = true;
+    $('wElevCanvas').setPointerCapture(e.pointerId);
+    scrubProfile($('wElevCanvas'), e.clientX);
+  });
+  $('wElevCanvas').addEventListener('pointermove', e => {
+    if (scrubbingElev) scrubProfile($('wElevCanvas'), e.clientX);
+  });
+  $('wElevCanvas').addEventListener('pointerup', () => { scrubbingElev = false; });
+
+  $('mini').addEventListener('click', e => {
+    const c = $('mini');
+    if (!c._miniMapConv) return;
+    const r = c.getBoundingClientRect();
+    const fx = (e.clientX - r.left) / Math.max(1, r.width), fy = (e.clientY - r.top) / Math.max(1, r.height);
+    const { cx, cy, span, W, H } = c._miniMapConv;
+    const x = cx + ((fx * W - W / 2) / (W - 28)) * span;
+    const y = cy - ((fy * H - H / 2) / (H - 28)) * span;
+    if (slopeAt(x, y) > 15) { notice('That spot is over 15°. Pick a gentler spot on the route.'); return; }
+    WK.x = clamp(x, -HALF + 200, HALF - 200);
+    WK.y = clamp(y, -HALF + 200, HALF - 200);
+    WK.glideTarget = null;
+    if (T) rebuildPatch();
+    drawProfile(); drawMini(); drawWalkElev();
+  });
+
+  window.addEventListener('keydown', e => {
+    const tg = e.target.tagName;
+    if (tg === 'INPUT' || tg === 'TEXTAREA') return;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (S.mode !== 'walk') return;
+    if (k === 'Escape') { setMode('map'); return; }
+    if (['w', 'a', 's', 'd', 'q', 'e', 'Shift', ' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(k)) {
+      e.preventDefault();
+      WK.keys[k] = true;
+    }
+  });
+  window.addEventListener('keyup', e => {
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    delete WK.keys[k];
+  });
+  window.addEventListener('blur', () => { WK.keys = {}; WK.dpad = {}; });
+  window.addEventListener('resize', () => {
+    if (S.mode === 'walk') resizeWalk();
+    if (map) map.invalidateSize();
+    drawProfile(); drawMini(); drawWalkElev();
+  });
+}
+
+safe(bindEvents);
+safe(startIntro);
+</script>
 </body>
 </html>
