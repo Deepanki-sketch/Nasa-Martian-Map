@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let streetViewSunHalo = null;
   let streetViewDirLight = null;
   let streetViewAmbientLight = null;
+  let streetViewGroundMesh = null;
+  let streetViewRocksGroup = null;
+  let currentStreetViewPhotoKey = 'boxwork';
   let currentSunElevation = 35;
   let currentSunAzimuth = 245;
   let currentSurveySiteId = 'SITE-GALE';
@@ -94,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     scienceLayerGroup = L.layerGroup().addTo(mapInstance);
     radiationLayerGroup = L.layerGroup();
 
-    // Default Basemap: Mars Satellite
+    // Default Basemap: Real NASA Viking MDIM2.1 Global Satellite Mosaic
     switchBasemap('satellite');
 
     // Render Markers & Features
@@ -126,37 +129,49 @@ document.addEventListener('DOMContentLoaded', () => {
     if (galeBasemapOverlay) mapInstance.removeLayer(galeBasemapOverlay);
 
     if (type === 'satellite') {
-      // Seamless full-bleed OpenPlanetary Mars Basemap (crisp edge-to-edge across entire screen)
-      activeBasemapLayer = L.tileLayer('https://cartocdn-gusc.global.ssl.fastly.net/opmbuilder/api/v1/map/named/opm-mars-basemap-v0-2/all/{z}/{x}/{y}.png', {
+      // Real NASA Viking MDIM2.1 Global Color Photographic Satellite Mosaic (Entire Planet Mars)
+      activeBasemapLayer = L.tileLayer('https://s3-eu-west-1.amazonaws.com/whereonmars.cartodb.net/viking_mdim21_global/{z}/{x}/{y}.png', {
         maxZoom: 14,
-        minZoom: 4,
-        attribution: 'OpenPlanetary / USGS Astrogeology'
+        minZoom: 0,
+        maxNativeZoom: 7,
+        tms: true,
+        attribution: 'NASA / USGS / Viking MDIM2.1 Global Color Mosaic'
       }).addTo(mapInstance);
 
-      hillshadeLayer = L.tileLayer('https://s3.us-east-2.amazonaws.com/opmmarstiles/hillshade-tiles/{z}/{x}/{y}.png', {
+      hillshadeLayer = L.tileLayer('https://s3-eu-west-1.amazonaws.com/whereonmars.cartodb.net/mola_color-noshade_global/{z}/{x}/{y}.png', {
         maxZoom: 14,
+        minZoom: 0,
         maxNativeZoom: 6,
-        opacity: 0.45
+        tms: true,
+        opacity: 0.25,
+        attribution: 'NASA MGS MOLA'
       }).addTo(mapInstance);
 
     } else if (type === 'marstrek_mola') {
       // NASA JPL Solar System Treks (Mars Trek) Global HD Color Altimetry
-      activeBasemapLayer = L.tileLayer('https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg', {
-        maxZoom: 10,
+      activeBasemapLayer = L.tileLayer('https://s3-eu-west-1.amazonaws.com/whereonmars.cartodb.net/mola_color-noshade_global/{z}/{x}/{y}.png', {
+        maxZoom: 14,
         minZoom: 0,
-        attribution: 'NASA JPL / Mars Trek'
+        maxNativeZoom: 6,
+        tms: true,
+        attribution: 'NASA MGS MOLA Global Altimetry'
       }).addTo(mapInstance);
 
-      hillshadeLayer = L.tileLayer('https://s3.us-east-2.amazonaws.com/opmmarstiles/hillshade-tiles/{z}/{x}/{y}.png', {
+      hillshadeLayer = L.tileLayer('https://s3-eu-west-1.amazonaws.com/whereonmars.cartodb.net/viking_mdim21_global/{z}/{x}/{y}.png', {
         maxZoom: 14,
-        maxNativeZoom: 6,
-        opacity: 0.35
+        minZoom: 0,
+        maxNativeZoom: 7,
+        tms: true,
+        opacity: 0.35,
+        attribution: 'NASA Viking MDIM2.1'
       }).addTo(mapInstance);
 
     } else if (type === 'topo_mola') {
       activeBasemapLayer = L.tileLayer('https://s3-eu-west-1.amazonaws.com/whereonmars.cartodb.net/mola_color-noshade_global/{z}/{x}/{y}.png', {
         maxZoom: 14,
+        minZoom: 0,
         maxNativeZoom: 6,
+        tms: true,
         attribution: 'NASA / MGS MOLA Altimetry'
       }).addTo(mapInstance);
 
@@ -698,6 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (wpIndex === 4) photoKey = 'boxwork';
     else if (wpIndex === 5) photoKey = 'gediz_vallis';
 
+    currentStreetViewPhotoKey = photoKey;
     initThreeStreetView(photoKey, currentSunElevation, currentSunAzimuth);
   }
 
@@ -748,6 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show Overlay
     document.getElementById('streetview-overlay').classList.add('active');
 
+    currentStreetViewPhotoKey = site.panoramaKey;
     initThreeStreetView(site.panoramaKey, currentSunElevation, currentSunAzimuth);
   }
 
@@ -1196,7 +1213,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const height = window.innerHeight;
 
     streetViewScene = new THREE.Scene();
-    streetViewCamera = new THREE.PerspectiveCamera(75, width / height, 1, 1200);
+    streetViewCamera = new THREE.PerspectiveCamera(75, width / height, 1, 1400);
     streetViewCamera.target = new THREE.Vector3(0, 0, 0);
 
     streetViewRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -1204,11 +1221,11 @@ document.addEventListener('DOMContentLoaded', () => {
     streetViewRenderer.setSize(width, height);
     container.appendChild(streetViewRenderer.domElement);
 
-    // 1. Inverted Sphere geometry for 360 Panorama
-    const geometry = new THREE.SphereGeometry(500, 60, 40);
+    // 1. Inverted Sky Sphere geometry for 360 Panorama & Mount Sharp Vista
+    const geometry = new THREE.SphereGeometry(600, 60, 40);
     geometry.scale(-1, 1, 1);
 
-    // 2. Immediate Procedural Mars Texture (Guaranteed zero-black screen)
+    // 2. Real NASA Mastcam Photographic Texture (Guaranteed Authentic NASA Imaging)
     let initialTexture;
     if (typeof generateMarsEquirectangularTexture === 'function') {
       const procCanvas = generateMarsEquirectangularTexture(photoKey, sunElev);
@@ -1226,26 +1243,23 @@ document.addEventListener('DOMContentLoaded', () => {
     streetViewSphereMesh = new THREE.Mesh(geometry, material);
     streetViewScene.add(streetViewSphereMesh);
 
-    // 3. If embedded Base64 image is available, load it immediately into texture
-    const embeddedSrc = (typeof MARS_EMBEDDED_PANORAMAS !== 'undefined') ? MARS_EMBEDDED_PANORAMAS[photoKey] : null;
-    if (embeddedSrc && embeddedSrc.length > 100) {
-      const img = new Image();
-      img.onload = () => {
-        const tex = new THREE.Texture(img);
-        tex.needsUpdate = true;
-        material.map = tex;
-        material.needsUpdate = true;
-      };
-      img.src = embeddedSrc;
+    // Asynchronously ensure Real NASA Mastcam photo is composited and applied
+    if (typeof loadRealNasaTexture === 'function') {
+      loadRealNasaTexture(photoKey, sunElev, (tex) => {
+        if (streetViewSphereMesh) {
+          streetViewSphereMesh.material.map = tex;
+          streetViewSphereMesh.material.needsUpdate = true;
+        }
+      });
     }
 
-    // 4. Directional Sunlight & Ambient Light
+    // 3. Directional Sunlight & Ambient Light
     streetViewDirLight = new THREE.DirectionalLight(0xfffaed, 1.2);
     streetViewAmbientLight = new THREE.AmbientLight(0x8a553c, 0.6);
     streetViewScene.add(streetViewDirLight);
     streetViewScene.add(streetViewAmbientLight);
 
-    // 5. Visual 3D Martian Sun Disc & Scattering Halo
+    // 4. Visual 3D Martian Sun Disc & Scattering Halo
     const sunGeo = new THREE.SphereGeometry(14, 24, 24);
     const sunMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     streetViewSunMesh = new THREE.Mesh(sunGeo, sunMat);
@@ -1279,7 +1293,7 @@ document.addEventListener('DOMContentLoaded', () => {
     streetViewScene.add(scienceHotspotGroup);
 
     svLon = 180;
-    svLat = 0;
+    svLat = 5; // Look slightly up toward horizon and sky by default
 
     // Mouse Drag to look around in 360 degrees
     container.onmousedown = (e) => {
@@ -1331,7 +1345,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // 0.38g Martian Low-Gravity Jump Physics
       if (isAstronautJumping) {
         astronautPos.y += astronautYVelocity;
-        astronautYVelocity -= 0.09; // 0.38g acceleration
+        astronautYVelocity -= 0.09; // 0.38g Mars acceleration
         if (astronautPos.y <= astronautBaseY) {
           astronautPos.y = astronautBaseY;
           isAstronautJumping = false;
@@ -1357,17 +1371,45 @@ document.addEventListener('DOMContentLoaded', () => {
       const phi = THREE.MathUtils.degToRad(90 - svLat);
       const theta = THREE.MathUtils.degToRad(svLon);
 
-      streetViewCamera.target.x = 500 * Math.sin(phi) * Math.cos(theta);
-      streetViewCamera.target.y = 500 * Math.cos(phi);
-      streetViewCamera.target.z = 500 * Math.sin(phi) * Math.sin(theta);
-
-      streetViewCamera.lookAt(streetViewCamera.target);
-      if (streetViewSunHalo) {
-        streetViewSunHalo.lookAt(streetViewCamera.position);
+      let camX, camY, camZ;
+      if (isHelmetVisorMode) {
+        // 1st-Person Helmet Visor: camera at astronaut's eye level
+        camX = astronautPos.x;
+        camY = astronautPos.y + 11.2;
+        camZ = astronautPos.z;
+        updateVisorHUD();
+      } else {
+        // 3rd-Person Mode: camera sits behind and slightly above the astronaut
+        const camDist = 34;
+        camX = astronautPos.x - Math.sin(theta) * camDist;
+        camY = astronautPos.y + 12;
+        camZ = astronautPos.z - Math.cos(theta) * camDist;
       }
 
-      if (isHelmetVisorMode) {
-        updateVisorHUD();
+      streetViewCamera.position.set(camX, camY, camZ);
+
+      // Keep SkySphere centered on camera so sky and Mount Sharp horizon remain at optical infinity
+      if (streetViewSphereMesh) {
+        streetViewSphereMesh.position.set(camX, camY, camZ);
+      }
+
+      // Camera Target in 360-degree sphere
+      streetViewCamera.target.x = camX + 500 * Math.sin(phi) * Math.cos(theta);
+      streetViewCamera.target.y = camY + 500 * Math.cos(phi);
+      streetViewCamera.target.z = camZ + 500 * Math.sin(phi) * Math.sin(theta);
+      streetViewCamera.lookAt(streetViewCamera.target);
+
+      // Update Sun mesh position relative to camera
+      if (streetViewSunMesh && streetViewSunHalo) {
+        const elevRad = THREE.MathUtils.degToRad(currentSunElevation);
+        const azRad = THREE.MathUtils.degToRad(currentSunAzimuth);
+        const r = 475;
+        const sx = camX + r * Math.cos(elevRad) * Math.sin(azRad);
+        const sy = camY + r * Math.sin(elevRad);
+        const sz = camZ + r * Math.cos(elevRad) * Math.cos(azRad);
+        streetViewSunMesh.position.set(sx, sy, sz);
+        streetViewSunHalo.position.set(sx, sy, sz);
+        streetViewSunHalo.lookAt(streetViewCamera.position);
       }
 
       streetViewRenderer.render(streetViewScene, streetViewCamera);
@@ -1375,9 +1417,27 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSV();
   }
 
+  let lastSkyState = 'day';
+  function checkAndUpdateSkyTexture(elevDeg) {
+    let state = 'day';
+    if (elevDeg <= 0) state = 'night';
+    else if (elevDeg <= 12) state = 'sunset';
+
+    if (state !== lastSkyState && streetViewSphereMesh && typeof generateMarsEquirectangularTexture === 'function') {
+      lastSkyState = state;
+      const c = generateMarsEquirectangularTexture(currentStreetViewPhotoKey, elevDeg);
+      if (streetViewSphereMesh.material.map) {
+        streetViewSphereMesh.material.map.dispose();
+      }
+      streetViewSphereMesh.material.map = new THREE.CanvasTexture(c);
+      streetViewSphereMesh.material.needsUpdate = true;
+    }
+  }
+
   function updateSunPosition(elevDeg, azDeg) {
     currentSunElevation = elevDeg;
     currentSunAzimuth = azDeg;
+    checkAndUpdateSkyTexture(elevDeg);
 
     const elevRad = THREE.MathUtils.degToRad(elevDeg);
     const azRad = THREE.MathUtils.degToRad(azDeg);
@@ -1826,6 +1886,38 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => myLocationMarker.closeTooltip(), 2500);
       }
     });
+
+    // Launch Current View in Official NASA Mars Trek (Live API deep sync)
+    const btnMarsTrekPortal = document.getElementById('btn-open-marstrek-portal');
+    if (btnMarsTrekPortal) {
+      btnMarsTrekPortal.addEventListener('click', () => {
+        const center = mapInstance.getCenter();
+        const zoom = mapInstance.getZoom();
+        const trekUrl = `https://trek.nasa.gov/mars/#v=0.1&x=${center.lng.toFixed(5)}&y=${center.lat.toFixed(5)}&z=${Math.min(10, Math.max(3, zoom))}&p=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A104905`;
+        window.open(trekUrl, '_blank');
+      });
+    }
+
+    // Street View NASA Mars Trek Deep Sync
+    const btnSvTrek = document.getElementById('btn-sv-trek');
+    if (btnSvTrek) {
+      btnSvTrek.addEventListener('click', () => {
+        let lat = -4.765, lng = 137.355;
+        if (isPlanetaryMode && MARS_DATA.planetarySites) {
+          const site = MARS_DATA.planetarySites.find(s => s.id === currentSurveySiteId);
+          if (site && site.coords) {
+            lat = site.coords[0];
+            lng = site.coords[1];
+          }
+        } else if (MARS_DATA.waypoints[activeDestinationIndex]) {
+          const wp = MARS_DATA.waypoints[activeDestinationIndex];
+          lat = wp.coords[0];
+          lng = wp.coords[1];
+        }
+        const trekUrl = `https://trek.nasa.gov/mars/#v=0.1&x=${lng.toFixed(5)}&y=${lat.toFixed(5)}&z=6&p=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A104905`;
+        window.open(trekUrl, '_blank');
+      });
+    }
 
     // Street View Pegman & Card Buttons
     document.getElementById('btn-streetview-toggle').addEventListener('click', () => {

@@ -50,6 +50,11 @@
 
       <!-- Action Buttons (Clean SVG Icons - No Emojis) -->
       <div class="directions-actions">
+        <button id="btn-open-marstrek-portal" class="gmaps-round-btn btn-marstrek-badge" title="Launch Current View in NASA Mars Trek Live (trek.nasa.gov)">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+        </button>
         <button id="btn-guide" class="gmaps-round-btn" title="How to use / Simple Guide">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
@@ -151,8 +156,8 @@
       <input type="checkbox" id="chk-science" checked>
     </label>
     <label class="layer-toggle-row">
-      <span>Gale Crater Orbital Photo</span>
-      <input type="checkbox" id="chk-orbital-photo">
+      <span>Gale Crater High-Res Orbital Photo (NASA 2.5K)</span>
+      <input type="checkbox" id="chk-orbital-photo" checked>
     </label>
     <label class="layer-toggle-row">
       <span>Space Radiation Zone</span>
@@ -384,6 +389,14 @@
             <path d="M5.5 21v-2a6.5 6.5 0 0 1 13 0v2"></path>
           </svg>
           <span id="sv-mode-label">Mode: 3D Avatar</span>
+        </button>
+
+        <!-- NASA Mars Trek Live Deep-Sync Button -->
+        <button id="btn-sv-trek" class="sv-top-action-btn sv-btn-trek" title="Open this exact site in official NASA Mars Trek (trek.nasa.gov)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+          <span>NASA Mars Trek</span>
         </button>
 
         <div class="streetview-compass-badge" id="sv-compass-badge">
