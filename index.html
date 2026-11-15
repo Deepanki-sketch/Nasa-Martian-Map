@@ -133,10 +133,33 @@ p{margin:0 0 8px}
 .w-slider-row span{color:var(--hud-muted)}
 .w-slider-row b{font:600 11.5px "IBM Plex Mono",monospace;color:#FBBF24;text-align:right}
 .w-slider-row input[type=range]{width:100%;accent-color:var(--accent-orange);cursor:pointer;height:5px}
-
-.w-tabs{display:flex;gap:6px;background:var(--hud-bg);backdrop-filter:blur(10px);padding:3px;border-radius:999px;border:1px solid var(--hud-line)}
-.w-tab{background:transparent;border:0;color:var(--hud-muted);padding:5px 14px;border-radius:999px;font:600 11.5px "IBM Plex Sans",sans-serif}
-.w-tab.on{background:rgba(255,255,255,0.16);color:#fff}
+.w-sun-toggle{
+  background:var(--hud-bg);
+  backdrop-filter:blur(10px);
+  border:1px solid var(--hud-line);
+  color:var(--hud-text);
+  padding:5px 15px;
+  border-radius:999px;
+  font:600 11.5px/1 "IBM Plex Sans",sans-serif;
+  cursor:pointer;
+  box-shadow:0 4px 14px rgba(0,0,0,.35);
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  transition:all .15s ease;
+  user-select:none;
+}
+.w-sun-toggle:hover{
+  background:rgba(224,112,32,0.88);
+  border-color:#fff;
+  color:#fff;
+}
+.w-sun-toggle.open,
+.w-sun-toggle.active{
+  background:rgba(224,112,32,0.85);
+  border-color:#FDBA74;
+  color:#fff;
+}
 .w-chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .w-chip{background:var(--hud-bg);backdrop-filter:blur(10px);border:1px solid var(--hud-line);color:var(--hud-text);padding:5px 14px;border-radius:999px;font:600 12px "IBM Plex Sans",sans-serif}
 .w-chip.on{background:var(--accent-blue);border-color:#93C5FD;color:#fff}
@@ -525,14 +548,20 @@ dd{margin:0;font-weight:600}
         <div class="t-sub" id="hTerr">Rocky knife-edge ridges</div>
       </div>
       <div class="w-tcol">
-        <div class="t-lbl">Weather &amp; Suit O2</div>
+        <div class="t-lbl">Weather &amp; Solar</div>
         <div class="t-val" id="hWeather">-38°C · O2 92%</div>
         <div class="t-sub" id="hBack">Clear sky · Light red haze</div>
+        <div class="t-sub mono" id="hSolarMini" style="color:#FBBF24;margin-top:2px">Sun 35° · 485 W/m²</div>
       </div>
     </div>
 
-    <!-- Sunlight & Solar Angle Card -->
-    <div class="w-sun-card">
+    <!-- Toggle Button for Collapsible Sunlight & Atmosphere Panel -->
+    <button id="btnToggleSun" class="w-sun-toggle" title="Toggle detailed solar angle and atmospheric dust storm controls">
+      <span>Sunlight &amp; Atmosphere Controls ▾</span>
+    </button>
+
+    <!-- Sunlight & Solar Angle Card (Collapsed by Default) -->
+    <div class="w-sun-card" id="sunCard" hidden>
       <div class="w-sun-head">
         <span class="w-sun-title">Sunlight &amp; Solar Angle</span>
         <span class="w-sun-metrics">
@@ -540,6 +569,7 @@ dd{margin:0;font-weight:600}
           Azimuth: <b id="lblSunAz">245° SW</b> &nbsp;
           Solar Flux: <b id="lblFlux">485 W/m²</b>
         </span>
+        <button id="btnCloseSun" class="btn sm" style="padding:2px 8px;font-size:11px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:#fff">Close ✕</button>
       </div>
       <div class="w-presets">
         <button class="w-preset" data-time="6">Dawn 06:00</button>
@@ -558,12 +588,6 @@ dd{margin:0;font-weight:600}
         <input type="range" id="wTauSlider" min="0.1" max="3.0" step="0.05" value="0.6">
         <b id="wTauVal">τ 0.6 (Clear)</b>
       </div>
-    </div>
-
-    <!-- Mode Tabs -->
-    <div class="w-tabs">
-      <button class="w-tab on" id="tabRoute">Gale Crater Route</button>
-      <button class="w-tab" id="tabPano">Survey Mars Planet Sites (Rover Sky)</button>
     </div>
 
     <!-- Site Switcher Chips -->
@@ -756,40 +780,35 @@ const PLACES = [
     short: 'Base Camp',
     sub: 'Bradbury Landing · Gale Crater Floor',
     lat: -4.5895, lon: 137.4417,
-    note: 'Curiosity landing area on the flat northern floor of Gale Crater.',
-    pano: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/PIA16101-MarsCuriosityRover-MtSharp-20120827.jpg/1920px-PIA16101-MarsCuriosityRover-MtSharp-20120827.jpg'
+    note: 'Curiosity landing area on the flat northern floor of Gale Crater.'
   },
   {
     name: 'Pahrump Hills',
     short: 'Pahrump Hills',
     sub: 'Murray Formation Mudstones · Basal Mount Sharp',
     lat: -4.6650, lon: 137.4500,
-    note: 'Fine-grained lakebed mudstones at the base of Mount Sharp.',
-    pano: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/PIA19069-MarsCuriosityRover-PahrumpHills-20141118.jpg/1920px-PIA19069-MarsCuriosityRover-PahrumpHills-20141118.jpg'
+    note: 'Fine-grained lakebed mudstones at the base of Mount Sharp.'
   },
   {
     name: 'Vera Rubin Ridge',
     short: 'Vera Rubin',
     sub: 'Vera Rubin Ridge (Hematite Scarp)',
     lat: -4.6600, lon: 137.4700,
-    note: 'Iron-oxide cemented ridge recording ancient groundwater diagenesis.',
-    pano: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/PIA22210-MarsCuriosityRover-VeraRubinRidge-20180125.jpg/1920px-PIA22210-MarsCuriosityRover-VeraRubinRidge-20180125.jpg'
+    note: 'Iron-oxide cemented ridge recording ancient groundwater diagenesis.'
   },
   {
     name: 'Boxwork Ridge',
     short: 'Boxwork Ridge',
     sub: 'Boxwork Ridge (Spiderweb Mineral Walls)',
     lat: -4.7000, lon: 137.5200,
-    note: 'Primary science target: honeycomb network of mineral-cemented bedrock fractures.',
-    pano: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/PIA19912-MarsCuriosityRover-MountSharp-20150924.jpg/1920px-PIA19912-MarsCuriosityRover-MountSharp-20150924.jpg'
+    note: 'Primary science target: honeycomb network of mineral-cemented bedrock fractures.'
   },
   {
     name: 'Gediz Vallis',
     short: 'Gediz Vallis',
     sub: 'Gediz Vallis Channel & Debris Mound',
     lat: -4.8200, lon: 137.6100,
-    note: 'Late-stage wind and water-carved channel high on the Mount Sharp flank.',
-    pano: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/PIA26443-Mars-CuriosityRover-GedizVallisChannel-20240601.jpg/1920px-PIA26443-Mars-CuriosityRover-GedizVallisChannel-20240601.jpg'
+    note: 'Late-stage wind and water-carved channel high on the Mount Sharp flank.'
   }
 ].map(p => ({ ...p, ...ll2xy(p.lat, p.lon) }));
 const BASE = PLACES[0];
@@ -806,8 +825,7 @@ const S = {
   autoWalk: false,
   audioOn: false,
   avatarMode: false,
-  slopeHeatmap: true, // Realistic slope hazard overlay in 3D Street View (<10° Safe, 10°-15° Caution, >15° Hazard)
-  panoSky: false
+  slopeHeatmap: true // Realistic slope hazard overlay in 3D Street View (<10° Safe, 10°-15° Caution, >15° Hazard)
 };
 
 const WK = {
@@ -835,9 +853,9 @@ let walkRunning = false, lastT = 0, lastHud = 0;
 
 const LAYERS = {
   relief: { label: 'Shaded relief (MOLA height)', url: 'https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg', max: 5 },
-  heat: { label: 'Thermal inertia (THEMIS IR)', url: 'https://trek.nasa.gov/tiles/Mars/EQ/Mars_MO_THEMIS-IR-Day_mosaic_global_100m_v12/1.0.0/default/default028mm/{z}/{y}/{x}.png', max: 7 },
+  heat: { label: 'Thermal inertia (THEMIS IR)', url: 'https://trek.nasa.gov/tiles/Mars/EQ/THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018/1.0.0/default/default028mm/{z}/{y}/{x}.png', max: 7 },
   optic: { label: 'Optical mosaic (Viking/CTX)', url: 'https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg', max: 6 },
-  plain: { label: 'Plain background', url: null }
+  plain: { label: 'Plain chart background', url: null }
 };
 
 /* ================= A* HAZARD ROUTER ================= */
@@ -1381,16 +1399,52 @@ function drawRouteMap() {
     }).addTo(stopLayer);
   });
 }
+let plainGridLayer = null;
+
 function setLayer(name) {
   if (!map) return;
   S.layer = name;
   if (tileLayer) { map.removeLayer(tileLayer); tileLayer = null; }
+  if (plainGridLayer) { map.removeLayer(plainGridLayer); plainGridLayer = null; }
+
   const cfg = LAYERS[name];
   if (cfg && cfg.url) {
     tileLayer = L.tileLayer(cfg.url, { minZoom: 7, maxZoom: 12, maxNativeZoom: cfg.max, attribution: 'NASA Mars Trek' }).addTo(map);
     tileLayer.on('tileerror', () => {
       if (!tileWarned) { tileWarned = true; notice('Some orbital map tiles could not stream; check internet or use Plain.'); }
     });
+  } else if (name === 'plain') {
+    // Generate crisp cartographic technical grid so the map visibly loads a technical navigation chart
+    plainGridLayer = L.gridLayer({ tileSize: 256, attribution: 'Planetary Cartographic Chart · Gale Crater Base Datum -4,462m' });
+    plainGridLayer.createTile = function(coords) {
+      const tile = document.createElement('canvas');
+      tile.width = tile.height = 256;
+      const ctx = tile.getContext('2d');
+      ctx.fillStyle = '#F5EFE6';
+      ctx.fillRect(0, 0, 256, 256);
+      ctx.strokeStyle = 'rgba(106, 93, 78, 0.16)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let i = 0; i <= 256; i += 64) {
+        ctx.moveTo(i, 0); ctx.lineTo(i, 256);
+        ctx.moveTo(0, i); ctx.lineTo(256, i);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(176, 70, 28, 0.35)';
+      ctx.lineWidth = 1.2;
+      for (let x = 64; x < 256; x += 128) {
+        for (let y = 64; y < 256; y += 128) {
+          ctx.beginPath();
+          ctx.moveTo(x - 6, y); ctx.lineTo(x + 6, y);
+          ctx.moveTo(x, y - 6); ctx.lineTo(x, y + 6);
+          ctx.stroke();
+        }
+      }
+      ctx.strokeStyle = 'rgba(106, 93, 78, 0.12)';
+      ctx.strokeRect(0, 0, 256, 256);
+      return tile;
+    };
+    plainGridLayer.addTo(map);
   }
   document.querySelectorAll('[data-layer]').forEach(b => b.classList.toggle('on', b.dataset.layer === name));
 }
@@ -1904,6 +1958,10 @@ function updateSky() {
   $('lblSunEl').textContent = Math.round(el) + '\u00B0';
   $('lblSunAz').textContent = Math.round(azDeg) + '\u00B0 ' + azComp;
   $('lblFlux').textContent = flux + ' W/m\u00B2';
+  if ($('hSolarMini')) {
+    const elWord = el > 0 ? Math.round(el) + '\u00B0 (' + azComp + ')' : 'Below Horizon';
+    $('hSolarMini').textContent = 'Sun: ' + elWord + ' · ' + flux + ' W/m²';
+  }
   $('wSunSlider').value = el;
   $('wSunVal').textContent = Math.round(el) + '\u00B0';
   $('wTauSlider').value = S.tau;
@@ -1914,12 +1972,10 @@ function updateSky() {
 
   if (!T || !window.THREE) return;
   const { tex, horRGB } = buildSkyTexture(window.THREE, el, S.tau);
-  if (!S.panoSky) {
-    if (T.skyDome.material.map) T.skyDome.material.map.dispose();
-    T.skyDome.material.map = tex;
-    T.skyDome.material.color.setHex(0xffffff);
-    T.skyDome.material.needsUpdate = true;
-  }
+  if (T.skyDome.material.map) T.skyDome.material.map.dispose();
+  T.skyDome.material.map = tex;
+  T.skyDome.material.color.setHex(0xffffff);
+  T.skyDome.material.needsUpdate = true;
   T.scene.fog.color.setRGB(horRGB[0], horRGB[1], horRGB[2]);
   T.scene.fog.density = 0.00028 + S.tau * 0.00018;
 
@@ -1931,36 +1987,6 @@ function updateSky() {
   );
   T.sun.intensity = el > 0 ? (0.55 + 1.45 * Math.sin(elR)) : 0.12;
   T.hemi.intensity = el > 0 ? (0.35 + 0.55 * Math.sin(elR)) : 0.15;
-}
-
-function applyPanoSky() {
-  if (!T || !window.THREE) return;
-  if (!S.panoSky) {
-    updateSky();
-    return;
-  }
-  const mod = window.THREE;
-  const p = PLACES[S.sel] || PLACES[3];
-  const loader = new mod.TextureLoader();
-  loader.setCrossOrigin('anonymous');
-  notice('Loading NASA Curiosity rover panorama for ' + p.name + '...');
-  loader.load(
-    p.pano,
-    tex => {
-      tex.mapping = mod.EquirectangularReflectionMapping;
-      T.skyDome.material.map = tex;
-      T.skyDome.material.needsUpdate = true;
-      notice('NASA Curiosity Rover panorama active on horizon dome.');
-    },
-    undefined,
-    () => {
-      S.panoSky = false;
-      $('tabPano').classList.remove('on');
-      $('tabRoute').classList.add('on');
-      updateSky();
-      notice('Panorama image offline; using 3D atmospheric sky.');
-    }
-  );
 }
 
 function resizeWalk() {
@@ -2748,7 +2774,6 @@ function jumpToPlace(i, open3D) {
   renderWalkChips();
   renderPlaceCard();
   if (T) rebuildPatch();
-  if (S.panoSky) applyPanoSky();
   drawProfile();
   drawMini();
   drawWalkElev();
@@ -2927,18 +2952,30 @@ function bindEvents() {
     $('btnAvatar').classList.toggle('active', S.avatarMode);
     $('btnAvatar').textContent = S.avatarMode ? 'Mode: 3D Avatar (ON)' : 'Mode: 3D Avatar';
   };
-  $('tabRoute').onclick = () => {
-    S.panoSky = false;
-    $('tabRoute').classList.add('on');
-    $('tabPano').classList.remove('on');
-    applyPanoSky();
-  };
-  $('tabPano').onclick = () => {
-    S.panoSky = !S.panoSky;
-    $('tabPano').classList.toggle('on', S.panoSky);
-    $('tabRoute').classList.toggle('on', !S.panoSky);
-    applyPanoSky();
-  };
+  const btnToggleSun = $('btnToggleSun');
+  const btnCloseSun = $('btnCloseSun');
+  const sunCard = $('sunCard');
+  if (btnToggleSun && sunCard) {
+    btnToggleSun.onclick = () => {
+      const isHidden = sunCard.hasAttribute('hidden');
+      if (isHidden) {
+        sunCard.removeAttribute('hidden');
+        btnToggleSun.classList.add('active');
+        btnToggleSun.textContent = 'Sunlight & Atmosphere Controls ▴';
+      } else {
+        sunCard.setAttribute('hidden', '');
+        btnToggleSun.classList.remove('active');
+        btnToggleSun.textContent = 'Sunlight & Atmosphere Controls ▾';
+      }
+    };
+  }
+  if (btnCloseSun && sunCard && btnToggleSun) {
+    btnCloseSun.onclick = () => {
+      sunCard.setAttribute('hidden', '');
+      btnToggleSun.classList.remove('active');
+      btnToggleSun.textContent = 'Sunlight & Atmosphere Controls ▾';
+    };
+  }
 
   document.querySelectorAll('[data-dpad]').forEach(b => {
     const dir = b.dataset.dpad;
